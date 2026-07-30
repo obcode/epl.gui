@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM node:24-alpine AS base
+FROM node:25-alpine AS base
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 WORKDIR /app
@@ -19,7 +19,7 @@ FROM base AS prod-deps
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
-FROM node:24-alpine
+FROM node:25-alpine
 WORKDIR /app
 ENV NODE_ENV=production
 ENV PORT=3000
