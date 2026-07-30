@@ -29,8 +29,8 @@ Lockfile-Änderung erzwingt sie.
 ## `test` gehört nicht in die vite.config
 
 Ein `test`-Block in `vite.config.ts` ist zwar zur Laufzeit funktionsfähig, aber kein
-gültiges `UserConfigExport` — `pnpm run check` meldet zu Recht *„Object literal may only
-specify known properties, and 'test' does not exist"*. Deshalb liegt die Vitest-Konfiguration
+gültiges `UserConfigExport` — `pnpm run check` meldet zu Recht _„Object literal may only
+specify known properties, and 'test' does not exist"_. Deshalb liegt die Vitest-Konfiguration
 in einer eigenen `vitest.config.ts` mit `defineConfig` aus `vitest/config`.
 
 Der `include`-Glob muss dort eng auf `src/**` stehen, sonst zieht `pnpm test` die
@@ -46,5 +46,6 @@ erwarten.
 <script lang="ts">
 	import { resolve } from '$app/paths';
 </script>
+
 <a href={resolve('/')}>…</a>
 ```
