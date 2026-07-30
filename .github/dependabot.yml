@@ -78,6 +78,22 @@ updates:
     # Image → Patch-Release, damit auch tatsächlich neu gebaut und ausgerollt wird.
     commit-message:
       prefix: fix(docker)
+    # Die Runtime-Stufe ist das Produktions-Image und gehört auf eine LTS-Linie. Node 24
+    # ist Active LTS bis 2028-04-30. Die beiden Alternativen sind es nicht:
+    #
+    #   Node 25 — nie LTS gewesen, EOL seit 2026-06-01
+    #   Node 26 — erst ab 2026-10-28 LTS
+    #
+    # Das steht hier und nicht als geschlossener PR, weil Dependabot einen manuell
+    # geschlossenen PR nur als „diese eine Version nicht" liest und daraufhin den
+    # nächstniedrigeren Major anbietet — am 2026-07-30 also das EOL-Node-25 (PR #13),
+    # nachdem PR #1 auf 26 geschlossen worden war. Ein Downgrade als Folge einer
+    # Ablehnung ist genau das, was diese Regel verhindert.
+    #
+    # AUFHEBEN AB 2026-10-28: dann ist Node 26 LTS und dieser Block kann weg.
+    ignore:
+      - dependency-name: node
+        update-types: ['version-update:semver-major']
     groups:
       docker-images:
         patterns: ['*']
