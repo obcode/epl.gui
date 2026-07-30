@@ -17,6 +17,17 @@ updates:
       time: '06:00'
       timezone: Europe/Berlin
     open-pull-requests-limit: 5
+    # Karenzzeit, damit ein frisch veröffentlichtes npm-Paket nicht am selben Tag im
+    # Lockfile landet. Ohne das öffnet Dependabot PRs, die pnpm anschließend selbst
+    # ablehnt (ERR_PNPM_MINIMUM_RELEASE_AGE_VIOLATION) — genau so passiert am
+    # 2026-07-30, siehe PR #7. Die drei Tage liegen mit Abstand über pnpms 24 Stunden.
+    # Majors bekommen mehr Zeit, weil sich die Fehler eines .0-Releases erst zeigen
+    # müssen.
+    cooldown:
+      default-days: 3
+      semver-patch-days: 3
+      semver-minor-days: 7
+      semver-major-days: 14
     # dependencies landen über die prod-deps-Stufe im Image → `fix`.
     # devDependencies (vite, eslint, playwright …) nicht → `chore`, kein Release.
     commit-message:
@@ -40,6 +51,10 @@ updates:
       time: '06:00'
       timezone: Europe/Berlin
     open-pull-requests-limit: 3
+    # Actions kennen kein SemVer, hier greift nur default-days. Eine unterwanderte
+    # Action ist der klassische CI-Angriffsweg — eine Woche Abstand ist billig.
+    cooldown:
+      default-days: 7
     # Ändert nur die Pipeline, nicht das ausgelieferte Artefakt → kein Release.
     commit-message:
       prefix: chore(ci)
@@ -56,6 +71,9 @@ updates:
       time: '06:00'
       timezone: Europe/Berlin
     open-pull-requests-limit: 3
+    # Docker-Tags kennen kein SemVer, hier greift nur default-days.
+    cooldown:
+      default-days: 7
     # Das Base-Image (`node:24-alpine`, in allen drei Stufen) steckt im ausgelieferten
     # Image → Patch-Release, damit auch tatsächlich neu gebaut und ausgerollt wird.
     commit-message:
