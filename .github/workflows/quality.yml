@@ -1,0 +1,30 @@
+name: quality
+
+# Das eigentliche Gate. Läuft auf jedem Push und jedem PR.
+# E2E-Tests fehlen hier bewusst: sie brauchen ein laufendes Backend.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    name: check · lint · test · build
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: check (svelte-check, blockierend)
+        run: pnpm run check
+      - run: pnpm run lint
+      - run: pnpm test
+      - run: pnpm run build

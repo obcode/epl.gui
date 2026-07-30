@@ -1,0 +1,18 @@
+node_modules/
+build/
+.svelte-kit/
+dist/
+/test-results/
+/playwright-report/
+/blob-report/
+
+# Lokale Backend-URL. Die Vorlage steht in .env.example.
+.env
+.env.*
+!.env.example
+
+# Claude
+.claude/settings.local.json
+
+# macOS
+.DS_Store

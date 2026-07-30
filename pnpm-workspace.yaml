@@ -1,0 +1,6 @@
+# pnpm-Settings (seit pnpm 10/11 nicht mehr im "pnpm"-Feld der package.json).
+# Native Postinstall-Builds sind aus Sicherheitsgründen standardmäßig blockiert;
+# hier werden die für Vite/Tailwind nötigen Pakete explizit erlaubt.
+allowBuilds:
+  '@tailwindcss/oxide': true
+  esbuild: true

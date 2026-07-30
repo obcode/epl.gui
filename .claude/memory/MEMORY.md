@@ -1,0 +1,13 @@
+# Memory — epl.gui (Frontend)
+
+Wissensbasis des Frontends. Übergreifendes und Betriebswissen liegt im privaten `epl.dev`
+(im Container unter `../epl.dev/.claude/memory/`).
+
+**Dieses Repo ist öffentlich.** Keine Hostnamen, keine Zugangsdaten, keine Namen von
+Kolleg:innen.
+
+- [Identität über AsyncLocalStorage](auth-header-relay.md) — warum der SSR-Hop X-Remote-User selbst mitschicken muss
+- [Keine Aggregate über unveröffentlichte Wünsche](no-wish-aggregates.md) — der Leckkanal, den Zeilenfilterung nicht schließt
+
+<!-- Weitere Notizen entstehen mit dem Code. Eine Datei = ein Sachverhalt, Frontmatter mit
+     name/description/metadata.type, Querverweise als [[slug]]. -->

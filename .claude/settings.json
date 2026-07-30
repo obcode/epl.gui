@@ -1,0 +1,15 @@
+{
+	"permissions": {
+		"allow": [
+			"Bash(pnpm install)",
+			"Bash(pnpm run check:*)",
+			"Bash(pnpm test:*)",
+			"Bash(pnpm lint)",
+			"Bash(pnpm format)",
+			"Bash(pnpm build)",
+			"Bash(pnpm codegen)",
+			"Bash(pnpm exec vitest run:*)",
+			"Bash(npx svelte-check:*)"
+		]
+	}
+}
