@@ -1,5 +1,5 @@
 {
-	"name": "epl.gui",
+	"name": "tallox.gui",
 	"version": "0.0.0",
 	"$comment": "version ist ein Platzhalter — die echte Version kommt aus den semantic-release-Tags und wird zur Bauzeit per define eingespielt.",
 	"author": "Oliver Braun <oliver.braun@hm.edu>",
@@ -19,7 +19,7 @@
 		"lint": "prettier --check . && eslint .",
 		"format": "prettier --write .",
 		"codegen": "graphql-codegen",
-		"update-schema": "bash -lc 'set -a && [ -f .env ] && . .env || true; pnpm dlx get-graphql-schema \"${EPL_SERVER:-http://localhost:8080/query}\" > schema.graphql && pnpm codegen'"
+		"update-schema": "bash -lc 'set -a && [ -f .env ] && . .env || true; pnpm dlx get-graphql-schema \"${TALLOX_SERVER:-http://localhost:8080/query}\" > schema.graphql && pnpm codegen'"
 	},
 	"dependencies": {
 		"graphql": "^16.11.0",

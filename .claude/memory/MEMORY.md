@@ -1,7 +1,7 @@
-# Memory — epl.gui (Frontend)
+# Memory — tallox.gui (Frontend)
 
-Wissensbasis des Frontends. Übergreifendes und Betriebswissen liegt im privaten `epl.dev`
-(im Container unter `../epl.dev/.claude/memory/`).
+Wissensbasis des Frontends. Übergreifendes und Betriebswissen liegt im privaten `tallox.dev`
+(im Container unter `../tallox.dev/.claude/memory/`).
 
 **Dieses Repo ist öffentlich.** Keine Hostnamen, keine Zugangsdaten, keine Namen von
 Kolleg:innen.

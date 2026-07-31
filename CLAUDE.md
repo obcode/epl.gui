@@ -1,14 +1,14 @@
 # CLAUDE.md
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this
-repository. The workspace-level file at `/workspace/CLAUDE.md` (from the private `epl.dev`
+repository. The workspace-level file at `/workspace/CLAUDE.md` (from the private `tallox.dev`
 repo) applies as well and covers the domain glossary, the cross-repo workflow and the git
 conventions.
 
 ## What this is
 
-A SvelteKit UI for **EPL**, the teaching-assignment planning system (_Einsatzplanung_) of
-faculty 07 at Hochschule München. It is a **thin frontend over the `epl.go` GraphQL
+A SvelteKit UI for **Tallox** (from _Teacher Allocations_), the teaching-assignment planning
+system (_Einsatzplanung_) of faculty 07 at Hochschule München. It is a **thin frontend over the `tallox.go` GraphQL
 backend**: no business logic, no persistence, and **never a security boundary**.
 
 That last point is not a slogan here. The same GraphQL API is reachable directly with a
@@ -34,7 +34,7 @@ pnpm format
 pnpm test                # vitest
 pnpm test:e2e            # playwright, needs a running backend
 pnpm codegen             # regenerate typed documents from schema.graphql
-pnpm run update-schema   # refetch schema from $EPL_SERVER, then codegen
+pnpm run update-schema   # refetch schema from $TALLOX_SERVER, then codegen
 ```
 
 `pnpm dev` binds `127.0.0.1` on purpose: without it Vite binds only `::1` and the
@@ -44,9 +44,9 @@ DevContainer port forward hangs silently.
 
 Two URLs, and the difference matters:
 
-- `PUBLIC_EPL_SERVER` — from the browser. In production the public URL; it carries the OIDC
+- `PUBLIC_TALLOX_SERVER` — from the browser. In production the public URL; it carries the OIDC
   cookie.
-- `EPL_SERVER` — from the SSR process, container-internal (`http://epl-api:8080/query`).
+- `TALLOX_SERVER` — from the SSR process, container-internal (`http://tallox-api:8080/query`).
   **Never point this at the public URL:** the SSR process has no OIDC cookie and would get
   the IdP's HTML login page back, which surfaces as a 500 on an arbitrary page.
 

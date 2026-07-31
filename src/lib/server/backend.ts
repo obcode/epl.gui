@@ -6,7 +6,7 @@ import { GraphQLClient } from 'graphql-request';
  * Identität des laufenden Requests.
  *
  * Warum AsyncLocalStorage und nicht `event.locals` durchreichen: der SSR-Hop läuft
- * containerintern gegen `http://epl-api:8080/query` und umgeht damit den Auth-Proxy. Das
+ * containerintern gegen `http://tallox-api:8080/query` und umgeht damit den Auth-Proxy. Das
  * Backend sieht also kein X-Remote-User, wenn wir es nicht selbst mitschicken. Es über die
  * Signatur jeder load()-Funktion und jedes /gui-api-Handlers zu fädeln wäre eine Änderung an
  * dutzenden Stellen — und eine vergessene Stelle wäre ein stiller Autorisierungsfehler.
@@ -22,7 +22,7 @@ function serverUrl(): string {
 	// NIE auf die öffentliche URL zeigen lassen: der SSR-Prozess hat kein OIDC-Cookie und
 	// bekäme die Login-Seite des IdP als HTML zurück. Symptom ist dann ein 500er auf einer
 	// beliebigen Seite, nicht etwa ein 401.
-	return env.EPL_SERVER || 'http://localhost:8080/query';
+	return env.TALLOX_SERVER || 'http://localhost:8080/query';
 }
 
 /**

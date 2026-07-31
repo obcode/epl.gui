@@ -11,10 +11,10 @@ In der Produktion authentifiziert ein Auth-Proxy (Caddy → oauth2-proxy → OID
 `X-Remote-User` autoritativ. Für den Browser stimmt das.
 
 Der **SSR-Hop** aber läuft containerintern: der Node-Prozess dieser Anwendung ruft
-`http://epl-api:8080/query` auf und geht damit **an Caddy vorbei**. Das Backend sieht dort
+`http://tallox-api:8080/query` auf und geht damit **an Caddy vorbei**. Das Backend sieht dort
 kein `X-Remote-User`, wenn diese Anwendung es nicht selbst mitschickt.
 
-Der naheliegende Ausweg — `EPL_SERVER` auf die öffentliche URL zeigen lassen — funktioniert
+Der naheliegende Ausweg — `TALLOX_SERVER` auf die öffentliche URL zeigen lassen — funktioniert
 nicht: der SSR-Prozess hat kein OIDC-Cookie und bekäme die HTML-Loginseite des IdP zurück.
 Symptom ist ein 500er auf einer beliebigen Seite, nicht etwa ein 401.
 

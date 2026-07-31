@@ -8,7 +8,7 @@
 <div class="flex min-h-screen flex-col">
 	<header class="border-base-300 bg-base-100 border-b">
 		<nav class="mx-auto flex max-w-6xl items-center gap-4 px-3 py-3 sm:px-4 lg:px-8">
-			<a href={resolve('/')} class="text-lg font-semibold">EPL</a>
+			<a href={resolve('/')} class="text-lg font-semibold">Tallox</a>
 			<span class="text-base-content/60 text-sm">Einsatzplanung FK07</span>
 		</nav>
 	</header>

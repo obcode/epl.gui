@@ -1,7 +1,7 @@
 minimum_pre_commit_version: '3.5.0'
 default_stages: [pre-commit]
 
-# Bewusst pre-commit statt husky/lint-staged: dasselbe Werkzeug wie in epl.go, im
+# Bewusst pre-commit statt husky/lint-staged: dasselbe Werkzeug wie in tallox.go, im
 # DevContainer schon installiert, und gitleaks lässt sich damit ohne Umweg einbinden.
 
 repos:
@@ -19,7 +19,7 @@ repos:
     rev: v8.30.0
     hooks:
       - id: gitleaks
-        # Eigene Regel für das epl_-Tokenformat. Der realistische Leckpfad ist nicht der
+        # Eigene Regel für das tallox_-Tokenformat. Der realistische Leckpfad ist nicht der
         # Server, sondern ein Auswertungsskript im Commit.
         args: ['--config', '.gitleaks.toml']
 
