@@ -8,6 +8,8 @@
 	"type": "module",
 	"packageManager": "pnpm@11.9.0",
 	"scripts": {
+		"$comment:prepare": "Erzeugt .svelte-kit/ (u.a. tsconfig.json, das die Wurzel-tsconfig per extends einbindet). Ohne das scheitert in einem frischen Checkout schon das Laden der Playwright-Config, bevor irgendein Test läuft.",
+		"prepare": "svelte-kit sync",
 		"dev": "vite dev --host 127.0.0.1",
 		"build": "vite build",
 		"preview": "vite preview",
