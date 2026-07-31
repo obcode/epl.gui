@@ -1,9 +1,13 @@
+import type { ThemeChoice } from '$lib/themes';
+
 declare global {
 	namespace App {
 		interface Locals {
 			/** Verifizierte Mailadresse, vom Auth-Proxy gesetzt. Lokal undefined. */
 			remoteUser?: string;
 			remoteDisplayname?: string;
+			/** Aus dem Cookie aufgelöst, siehe hooks.server.ts. Nie ein ungeprüfter Wert. */
+			theme: ThemeChoice;
 		}
 	}
 

@@ -1,6 +1,7 @@
 import { AsyncLocalStorage } from 'node:async_hooks';
 import { env } from '$env/dynamic/private';
-import { GraphQLClient } from 'graphql-request';
+import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
+import { GraphQLClient, type Variables } from 'graphql-request';
 
 /**
  * Identität des laufenden Requests.
@@ -42,10 +43,24 @@ export function backendClient(ctx?: AuthContext): GraphQLClient {
 	return new GraphQLClient(serverUrl(), { headers });
 }
 
-/** Kurzform für den Normalfall: eine Anfrage mit der Identität des laufenden Requests. */
-export function backendRequest<T = unknown>(
-	document: string,
-	variables?: Record<string, unknown>
-): Promise<T> {
-	return backendClient().request<T>(document, variables);
+/**
+ * Kurzform für den Normalfall: eine Anfrage mit der Identität des laufenden Requests.
+ *
+ * Nimmt bewusst nur ein `TypedDocumentNode` aus `$lib/gql/__generated__`, keinen String. Der
+ * Ergebnistyp kommt damit aus dem Dokument selbst — ein `<T>`, das man von Hand danebenschreibt,
+ * ist nur eine Behauptung und wird beim nächsten Schemawechsel still falsch.
+ */
+export function backendRequest<TResult, TVariables extends Variables>(
+	document: TypedDocumentNode<TResult, TVariables>,
+	variables?: TVariables
+): Promise<TResult> {
+	// Der Cast weitet ausschließlich den Variablen-Typparameter. graphql-request entscheidet
+	// über einen bedingten Typ, ob `variables` Pflicht ist, und der lässt sich für ein noch
+	// generisches TVariables nicht auflösen. Nach außen bleibt die Signatur eng.
+	//
+	// Bewusst KEIN Parameter für Header: die baut backendClient() aus der Identität des
+	// Requests, und eine Stelle, an der ein Aufrufer welche mitgeben kann, ist die Stelle, an
+	// der irgendwann ein durchgereichter Authorization-Header steht.
+	const widened = document as TypedDocumentNode<TResult, Variables>;
+	return backendClient().request<TResult>(widened, variables);
 }

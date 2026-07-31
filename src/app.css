@@ -1,7 +1,26 @@
 @import 'tailwindcss';
 
+/*
+ * Kuratierte Themeliste, MUSS mit THEMES in src/lib/themes.ts übereinstimmen. Nicht `all`:
+ * daisyUI legt sonst über 30 Themes ins Bundle, von denen nie eines ausgewählt wird.
+ *
+ * `--default` und `--prefersdark` sind das, was die Auswahl „System" überhaupt möglich macht:
+ * sie greifen genau dann, wenn am <html>-Tag kein data-theme steht.
+ */
 @plugin "daisyui" {
-	themes: all;
+	themes:
+		nord --default,
+		dim --prefersdark,
+		corporate,
+		emerald,
+		winter,
+		lofi,
+		retro,
+		cyberpunk,
+		business,
+		night,
+		dracula,
+		sunset;
 }
 
 @plugin "@tailwindcss/typography";

@@ -1,5 +1,10 @@
 <!doctype html>
-<html lang="de" data-theme="nord">
+<!--
+	Das data-theme setzt hooks.server.ts aus dem Cookie ein. Platzhalter für das ganze Attribut
+	und nicht nur für den Wert: bei der Auswahl „System" muss es komplett verschwinden, sonst
+	greifen die --default/--prefersdark-Themes aus app.css nicht.
+-->
+<html lang="de" %tallox.themeattr%>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />

@@ -85,7 +85,12 @@ committed copy of the backend schema; codegen reads that file, so it works offli
   `dynamicCompileOptions` compiles `node_modules` in legacy mode — that escape hatch is for
   dependencies, never for `src/`.
 - **TypeScript only.** `strict: true`. No `.js` files in `src/`.
-- **Styling: Tailwind v4 (CSS-first) + daisyUI**, theme via `theme-change`.
+- **Styling: Tailwind v4 (CSS-first) + daisyUI.** The theme is a **cookie**, resolved in
+  `hooks.server.ts` and written into `<html data-theme>` via `transformPageChunk` — not
+  `theme-change`, whose localStorage lives on the client and therefore flashes the default
+  theme on every full load of a server-rendered page. `src/lib/themes.ts` holds the
+  allowlist; the resolved value goes into the markup unescaped, so nothing outside that list
+  may ever survive `resolveTheme()`. The list must match the `themes:` block in `app.css`.
   Page wrapper `flex flex-col gap-4`; heading `text-2xl font-semibold`; cards
   `rounded-lg border border-base-300 bg-base-100 p-4`; status via **theme tokens**
   (`text-base-content/60`, `text-success`, `text-error`) — **never hard-coded colours** like

@@ -1,5 +1,6 @@
 import type { Handle } from '@sveltejs/kit';
 import { authContext } from '$lib/server/backend';
+import { resolveTheme, THEME_COOKIE, themeAttribute } from '$lib/themes';
 
 /**
  * Die eine Stelle für Identität, Zugangsgate und Schreibsperre.
@@ -20,5 +21,15 @@ export const handle: Handle = async ({ event, resolve }) => {
 	event.locals.remoteUser = remoteUser;
 	event.locals.remoteDisplayname = remoteDisplayname;
 
-	return authContext.run({ remoteUser, remoteDisplayname }, () => resolve(event));
+	// Das Theme muss VOR dem ersten Byte feststehen, sonst blitzt bei jedem Full Load kurz das
+	// Default-Theme auf. Der Wert läuft durch resolveTheme() und ist damit auf die Allowlist
+	// beschränkt — er wird ungeescaped in das <html>-Tag geschrieben.
+	const theme = resolveTheme(event.cookies.get(THEME_COOKIE));
+	event.locals.theme = theme;
+
+	return authContext.run({ remoteUser, remoteDisplayname }, () =>
+		resolve(event, {
+			transformPageChunk: ({ html }) => html.replace('%tallox.themeattr%', themeAttribute(theme))
+		})
+	);
 };
