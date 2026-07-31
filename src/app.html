@@ -9,6 +9,11 @@
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
+		<!-- Fallback-Titel. Seiten überschreiben ihn mit <svelte:head>, aber ohne einen hier
+		     hätte jede Seite, die das vergisst, gar keinen — und ein Dokument ohne <title> ist
+		     ein WCAG-Verstoß (2.4.2) und in einer Leiste voller Tabs schlicht nicht
+		     wiederfindbar. Steht vor %sveltekit.head%, damit ein eigener Titel gewinnt. -->
+		<title>Tallox — Einsatzplanung FK07</title>
 		%sveltekit.head%
 	</head>
 	<body data-sveltekit-preload-data="hover">

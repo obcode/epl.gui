@@ -34,7 +34,11 @@ export default ts.config(
 			'dist/',
 			'node_modules/',
 			'src/lib/gql/__generated__/',
-			'schema.graphql'
+			'schema.graphql',
+			// Testausgaben, nicht Quellcode.
+			'coverage/',
+			'playwright-report/',
+			'test-results/'
 		]
 	}
 );

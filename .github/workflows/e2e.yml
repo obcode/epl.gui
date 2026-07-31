@@ -1,0 +1,130 @@
+name: e2e
+
+# End-to-end gegen einen echten Stack: PostgreSQL → tallox.go → SvelteKit-SSR → Chromium.
+#
+# Eigener Workflow und nicht Teil von quality.yml, weil hier etwas Ungewöhnliches passiert:
+# dieser Job checkt das **Backend-Repository** mit aus und baut es. Das ist der Preis dafür,
+# die eine Sache prüfen zu können, die kein Test in einem der beiden Repos allein erreicht —
+# ob GUI und Backend zusammen tatsächlich funktionieren.
+#
+# Konkret geht es um die Identitätsweitergabe. Der SSR-Prozess spricht am Auth-Proxy vorbei
+# mit dem Backend und muss X-Remote-User selbst mitschicken. Fällt das aus, rendert jede
+# Seite anonym — und sieht dabei völlig normal aus. Ein Mock-Backend würde diesen Fehler
+# nicht zeigen, weil der Mock die Header bekäme, die der Test ihm gibt.
+
+on:
+  push:
+    branches: ['**']
+  pull_request:
+  # Damit eine Backend-Änderung diese Stufe auslösen kann, ohne dass hier etwas committet
+  # wird: tallox.go schickt einen repository_dispatch, sobald sein eigenes Gate grün ist.
+  repository_dispatch:
+    types: [backend-changed]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+
+    services:
+      postgres:
+        image: postgres:18
+        env:
+          POSTGRES_USER: tallox
+          POSTGRES_PASSWORD: tallox
+          POSTGRES_DB: tallox
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U tallox -d tallox"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      TALLOX_DB_URL: postgres://tallox:tallox@127.0.0.1:5432/tallox?sslmode=disable
+      # Der SSR-Prozess spricht das Backend direkt an, wie containerintern in der Produktion.
+      TALLOX_SERVER: http://127.0.0.1:8080/query
+
+    steps:
+      - name: checkout gui
+        uses: actions/checkout@v7
+
+      # Der Standard ist der Stand von main. Ein repository_dispatch aus tallox.go schickt
+      # seinen Commit mit, sodass diese Stufe genau die Backend-Version prüft, die ihn
+      # ausgelöst hat — und nicht die, die zufällig gerade auf main steht.
+      - name: checkout backend
+        uses: actions/checkout@v7
+        with:
+          repository: obcode/tallox.go
+          ref: ${{ github.event.client_payload.sha || 'main' }}
+          path: .backend
+
+      - uses: actions/setup-go@v7
+        with:
+          go-version-file: .backend/go.mod
+          cache-dependency-path: .backend/go.sum
+
+      - name: build backend
+        working-directory: .backend
+        run: go build -o tallox .
+
+      - name: start backend
+        working-directory: .backend
+        run: |
+          ./tallox -addr 127.0.0.1:8080 > "${RUNNER_TEMP}/backend.log" 2>&1 &
+          echo $! > "${RUNNER_TEMP}/backend.pid"
+
+      - name: wait for backend
+        run: |
+          for i in $(seq 1 60); do
+            if curl -fsS http://127.0.0.1:8080/healthz > /dev/null; then
+              echo "backend is up after ${i}s"
+              exit 0
+            fi
+            sleep 1
+          done
+          echo "::error::backend did not become healthy within 60s"
+          cat "${RUNNER_TEMP}/backend.log"
+          exit 1
+
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
+
+      # Nur Chromium. Die App ist für Kolleg:innen an Dienstrechnern und Tablets im Haus, und
+      # drei Browser-Engines zu installieren verdreifacht die Laufzeit für einen Ertrag, den
+      # dieses Publikum nicht hat.
+      - name: install chromium
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: e2e
+        run: pnpm run test:e2e
+
+      # Der Bericht ist bei einem Fehlschlag das Einzige, womit man ihn ohne lokale
+      # Reproduktion versteht — Trace, Screenshot und Video hängen darin.
+      - name: upload playwright report
+        if: always()
+        uses: actions/upload-artifact@v5
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 14
+
+      # Ohne das ist ein fehlgeschlagener E2E-Lauf oft nur "die Seite war leer", während der
+      # Grund im Backend-Log steht.
+      - name: backend log
+        if: failure()
+        run: cat "${RUNNER_TEMP}/backend.log"
+
+      - name: stop backend
+        if: always()
+        run: kill "$(cat "${RUNNER_TEMP}/backend.pid")" || true

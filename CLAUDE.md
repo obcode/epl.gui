@@ -117,8 +117,34 @@ These follow from the domain, not from taste. Full reasoning in the backend's
 
 ## Tests
 
+No step, feature or fix is finished without tests.
+
 - **vitest** for pure logic in `src/lib/**`. Convention: pull logic out of `.svelte` into a
-  `lib` module, test the module, import it back.
-- **Playwright** smoke tests in `tests/`, need a running backend and are therefore **not** in
-  the CI gate. In the DevContainer `/dev/shm` is 64 MB, so Chromium needs
-  `--disable-dev-shm-usage` and capped workers.
+  `lib` module, test the module, import it back. Coverage has thresholds (see
+  `vitest.config.ts`); `.svelte` files are excluded because Playwright covers them.
+- **Playwright** in `tests/`, against a real stack — PostgreSQL → `tallox.go` → SSR →
+  Chromium. Runs in its own workflow (`e2e.yml`), which checks out and builds the backend.
+  In the DevContainer `/dev/shm` is 64 MB, so Chromium needs `--disable-dev-shm-usage` and
+  capped workers.
+
+`tests/fixtures.ts` holds the cast — `PERSONAS.eins` owns the record, `zwei` must not see it —
+with the same names as the backend's `internal/testdata`, so a scenario reads the same in both
+repos. `asPersona(p)` sets `X-Remote-User` **the way the proxy does**: the test plays Caddy,
+not the client. `checkA11y(page)` runs axe against WCAG 2.1 AA.
+
+**What E2E is for here, and unit tests are not.** The SSR hop bypasses the auth proxy, so this
+app relays `X-Remote-User` itself through AsyncLocalStorage. When that breaks, every page
+renders as anonymous and looks completely normal — no error, no failing unit test. A mock
+backend cannot show it, because the mock receives whatever headers the test hands it. That is
+why `e2e.yml` builds the real backend rather than stubbing it.
+
+**Known-open findings stay visible.** `KNOWN_A11Y_DEBT` in `tests/fixtures.ts` lists axe rules
+that are currently violated; they are disabled for the blocking check so the other ~90 rules
+can stay sharp, and each one also gets its own `test.fixme` so it is named in every report.
+Same for the viewport widths in `tests/responsive.spec.ts`. Deleting such a test, or loosening
+it to a comfortable value, is how a suite quietly stops meaning anything — mark it `fixme`
+with a reason instead.
+
+Currently open: `color-contrast` (the `text-base-content/60`, `/45`, `/35` status tones fall
+below 4.5:1 on several daisyUI themes) and horizontal overflow at 768px and 1024px (the nav
+bar switches to seven side-by-side entries at `md:` and does not fit).

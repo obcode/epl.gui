@@ -5,6 +5,7 @@ dist/
 /test-results/
 /playwright-report/
 /blob-report/
+/coverage/
 
 # Lokale Backend-URL. Die Vorlage steht in .env.example.
 .env

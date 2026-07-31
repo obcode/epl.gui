@@ -1,7 +1,8 @@
 name: quality
 
-# Das eigentliche Gate. Läuft auf jedem Push und jedem PR.
-# E2E-Tests fehlen hier bewusst: sie brauchen ein laufendes Backend.
+# Das schnelle Gate. Läuft auf jedem Push und jedem PR, braucht kein Backend und keinen
+# Browser. E2E steht in e2e.yml — getrennt, weil dieser Workflow in unter zwei Minuten eine
+# Antwort geben soll und E2E einen ganzen Stack hochfährt.
 
 on:
   push:
@@ -26,5 +27,38 @@ jobs:
       - name: check (svelte-check, blockierend)
         run: pnpm run check
       - run: pnpm run lint
-      - run: pnpm test
+      - name: unit tests mit Abdeckungsschwellen
+        run: pnpm run test:coverage
+      - uses: actions/upload-artifact@v5
+        if: always()
+        with:
+          name: coverage
+          path: coverage/
+          retention-days: 14
       - run: pnpm run build
+
+  # Die versionierte Schema-Kopie muss zu den generierten Dokumenten passen.
+  #
+  # Der Fehler, den das fängt: jemand aktualisiert schema.graphql von Hand oder per
+  # `update-schema` und vergisst das Codegen. Der Build bleibt grün, weil der alte generierte
+  # Code weiterhin kompiliert — er beschreibt nur ein Schema, das es nicht mehr gibt, und der
+  # Typfehler taucht erst zur Laufzeit als leeres Feld auf.
+  codegen:
+    name: generierte Dokumente sind aktuell
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: pnpm/action-setup@v6
+      - uses: actions/setup-node@v7
+        with:
+          node-version: lts/*
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - run: pnpm run codegen
+      - name: kein Unterschied zum Commit
+        run: |
+          if ! git diff --exit-code; then
+            echo "::error::Die generierten GraphQL-Dokumente weichen vom Commit ab."
+            echo "Führe 'pnpm codegen' aus und committe das Ergebnis."
+            exit 1
+          fi

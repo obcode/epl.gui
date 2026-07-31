@@ -5,3 +5,6 @@ node_modules/
 pnpm-lock.yaml
 schema.graphql
 src/lib/gql/__generated__/
+coverage/
+playwright-report/
+test-results/
