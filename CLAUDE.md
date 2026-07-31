@@ -92,12 +92,26 @@ committed copy of the backend schema; codegen reads that file, so it works offli
   allowlist; the resolved value goes into the markup unescaped, so nothing outside that list
   may ever survive `resolveTheme()`. The list must match the `themes:` block in `app.css`.
   Page wrapper `flex flex-col gap-4`; heading `text-2xl font-semibold`; cards
-  `rounded-lg border border-base-300 bg-base-100 p-4`; status via **theme tokens**
-  (`text-base-content/60`, `text-success`, `text-error`) — **never hard-coded colours** like
+  `rounded-lg border border-base-300 bg-base-100 p-4`. **Never hard-coded colours** like
   `text-green-700`.
+
+  Two contrast rules, both measured across all twelve themes by `tests/contrast.spec.ts`:
+
+  - **Muted text is `/80` or `/90`, never lower.** Below 80% opacity `base-content` drops
+    under the 4.5:1 of WCAG 1.4.3 on `winter` (3.87:1 at /70) and `retro` (3.72:1). The scale
+    is therefore 100 / 90 / 80 and nothing else.
+  - **Semantic colours are background colours.** `text-error` / `text-warning` /
+    `text-success` on `base-100` reach 1.35:1 to 3.5:1 on the light themes — as text they are
+    unreadable, whatever they signal. Use `badge badge-error`, which daisyUI pairs with its
+    `*-content` foreground, and keep the sentence itself in `text-base-content/80`.
+
 - **Responsive, tablet-first.** Full usability from 768px, clean at 375px. Horizontal padding
   comes from `+layout.svelte`; pages do not add their own. Grids are always
   `grid-cols-1 sm:grid-cols-N`, wide tables live in `overflow-x-auto`.
+  Full usability does not mean everything at once: the nav bar shows its seven areas
+  side by side only from `lg` (1024px), below that the menu carries them — with the same
+  entries. Seven entries do not fit at 768px, and the version that tried made the page 883px
+  wide. `tests/responsive.spec.ts` watches the four widths.
 - **Prettier:** tabs, single quotes, no trailing commas, printWidth 100.
 - **Links need `resolve()`** from `$app/paths` (`svelte/no-navigation-without-resolve`).
 
@@ -145,6 +159,15 @@ Same for the viewport widths in `tests/responsive.spec.ts`. Deleting such a test
 it to a comfortable value, is how a suite quietly stops meaning anything — mark it `fixme`
 with a reason instead.
 
-Currently open: `color-contrast` (the `text-base-content/60`, `/45`, `/35` status tones fall
-below 4.5:1 on several daisyUI themes) and horizontal overflow at 768px and 1024px (the nav
-bar switches to seven side-by-side entries at `md:` and does not fit).
+Currently open: nothing. Both findings from the first run — contrast and the nav-bar
+overflow — are fixed, and `KNOWN_A11Y_DEBT` is empty.
+
+`tests/contrast.spec.ts` runs axe's contrast rule against **all twelve themes**, because the
+regular a11y check only ever sees the default one. Contrast here is a property of the pair
+(component, theme), not of the component: a value that is comfortable on `nord` fails on
+`winter`.
+
+**Opening a dropdown in a test needs `openDropdown()`**, not `.click()`. daisyUI fades menus
+in via `opacity`, and Playwright's `toBeVisible()` does not look at opacity — so axe measures
+through a half-transparent element, finds washed-out colours and reports contrast violations
+that do not exist. That looks exactly like a real defect in the UI.

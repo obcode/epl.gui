@@ -10,7 +10,7 @@
 <div class="flex flex-col gap-4">
 	<div>
 		<h1 class="text-2xl font-semibold">Einsatzplanung</h1>
-		<p class="text-base-content/60 text-sm">
+		<p class="text-base-content/80 text-sm">
 			Lehr-Einsatzplanung der Fakultät 07 — Bedarf, Wünsche und Zuteilung an einem Ort.
 		</p>
 	</div>
@@ -24,11 +24,11 @@
 				<p class="text-sm">
 					Angemeldet als <span class="font-mono">{data.remoteUser}</span>
 					{#if data.remoteDisplayname}
-						<span class="text-base-content/60">({data.remoteDisplayname})</span>
+						<span class="text-base-content/80">({data.remoteDisplayname})</span>
 					{/if}
 				</p>
 			{:else}
-				<p class="text-base-content/60 text-sm">
+				<p class="text-base-content/80 text-sm">
 					Kein <span class="font-mono">X-Remote-User</span> gesetzt — lokale Entwicklung ohne Auth-Proxy.
 				</p>
 			{/if}
@@ -43,8 +43,11 @@
 					Erreichbar, Version <span class="font-mono">{data.serverBuild.version}</span>.
 				</p>
 			{:else}
-				<p class="text-error text-sm">
-					Nicht erreichbar. Die Seite rendert trotzdem — Daten fehlen aber überall.
+				<!-- Der Zustand steckt im Badge, der Satz bleibt normaler Fließtext. `text-error`
+				     als Textfarbe auf base-100 unterschreitet auf den hellen Themes 4.5:1. -->
+				<p class="text-base-content/80 text-sm">
+					<span class="badge badge-error badge-sm align-middle">Nicht erreichbar</span>
+					Die Seite rendert trotzdem — Daten fehlen aber überall.
 				</p>
 			{/if}
 		</div>
@@ -54,12 +57,12 @@
 		<h2 class="mb-2 flex items-center gap-2 font-medium">
 			<span aria-hidden="true">🚧</span> Was noch entsteht
 		</h2>
-		<ul class="text-base-content/70 flex flex-col gap-1 text-sm">
+		<ul class="text-base-content/90 flex flex-col gap-1 text-sm">
 			{#each planned as item (item.label)}
 				<li>
 					<span aria-hidden="true">{item.emoji}</span>
 					{item.label}
-					<span class="text-base-content/45">— {item.hint}</span>
+					<span class="text-base-content/80">— {item.hint}</span>
 				</li>
 			{/each}
 		</ul>

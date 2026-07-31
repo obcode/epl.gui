@@ -42,21 +42,14 @@ type Fixtures = {
 /**
  * Regeln, die aktuell verletzt werden und deshalb nicht blockieren.
  *
- * Diese Liste ist eine Schuld, keine Konfiguration. Sie steht hier, damit die übrigen rund
- * neunzig axe-Regeln überhaupt scharf sein können — ohne sie wäre die einzige Alternative,
- * die Prüfung ganz abzuschalten, und dann fiele auch jede *neue* Verletzung unter den Tisch.
+ * Diese Liste ist eine Schuld, keine Konfiguration. Jeder Eintrag braucht eine Begründung und
+ * gehört wieder entfernt, sobald er behoben ist; `tests/a11y.spec.ts` führt für jeden Eintrag
+ * zusätzlich einen als `fixme` markierten Test, damit die offene Stelle in jedem Bericht
+ * namentlich auftaucht statt lautlos zu verschwinden.
  *
- * Jeder Eintrag braucht eine Begründung und gehört wieder entfernt, sobald er behoben ist.
- * `tests/a11y.spec.ts` führt für jeden Eintrag zusätzlich einen eigenen, als `fixme`
- * markierten Test — so taucht die offene Stelle in jedem Bericht namentlich auf, statt
- * lautlos zu verschwinden.
- *
- * - `color-contrast`: die Statustöne aus CLAUDE.md (`text-base-content/60`, `/45`, `/35`)
- *   unterschreiten auf mehreren daisyUI-Themes das 4.5:1 aus WCAG 1.4.3. Das ist keine
- *   einzelne kaputte Stelle, sondern eine Entscheidung über die Design-Tokens — und die
- *   gehört getroffen, nicht von einem Test erzwungen.
+ * Zurzeit leer — `color-contrast` stand hier und ist behoben.
  */
-export const KNOWN_A11Y_DEBT = ['color-contrast'] as const;
+export const KNOWN_A11Y_DEBT: readonly string[] = [];
 
 export const test = base.extend<Fixtures>({
 	asPersona: async ({ browser }, use) => {
@@ -101,7 +94,13 @@ export const test = base.extend<Fixtures>({
 				results.violations
 					.map(
 						(v) =>
-							`${v.id} (${v.impact}): ${v.help}\n  ${v.nodes.map((n) => n.target.join(' ')).join('\n  ')}`
+							`${v.id} (${v.impact}): ${v.help}\n` +
+							v.nodes
+								.map(
+									(n) =>
+										`  ${n.target.join(' ')}\n    ${n.failureSummary?.replace(/\n/g, '\n    ')}`
+								)
+								.join('\n')
 					)
 					.join('\n')
 			).toEqual([]);
@@ -121,4 +120,33 @@ export { expect };
 export async function gotoRendered(page: Page, path: string): Promise<void> {
 	await page.goto(path, { waitUntil: 'domcontentloaded' });
 	await page.locator('main').waitFor({ state: 'visible' });
+}
+
+/**
+ * Öffnet ein daisyUI-Dropdown und wartet, bis es wirklich sichtbar ist.
+ *
+ * Nicht `.click()` allein. Das Dropdown blendet über `opacity` ein und ist im Markup die
+ * ganze Zeit vorhanden — Playwrights `toBeVisible()` sieht Deckkraft nicht an, meldet also
+ * schon „sichtbar", während das Menü noch durchsichtig ist.
+ *
+ * Für axe ist das fatal und auf eine irreführende Weise: es misst die Farben durch das
+ * halbtransparente Element hindurch, findet ausgewaschene Werte und meldet
+ * Kontrastverletzungen, die es gar nicht gibt. Der Test wird also rot, und zwar mit einer
+ * Begründung, die nach einem echten Fehler in der Oberfläche aussieht.
+ */
+export async function openDropdown(page: Page, name: string | RegExp): Promise<void> {
+	const trigger = page.getByRole('button', { name });
+	await trigger.click();
+
+	// Vom Auslöser aus zum zugehörigen Inhalt, nicht `.dropdown-content` global: die Leiste
+	// hat zwei Dropdowns (Bereiche und Themewahl), und `.first()` erwischte verlässlich das
+	// falsche — der Helper wartete dann auf ein Menü, das niemand geöffnet hatte, und lief in
+	// den Timeout.
+	const content = trigger.locator('..').locator('.dropdown-content');
+	await expect
+		.poll(() => content.evaluate((el) => Number(getComputedStyle(el).opacity)), {
+			message: `Das Dropdown "${name}" ist nicht sichtbar geworden.`,
+			timeout: 5_000
+		})
+		.toBe(1);
 }

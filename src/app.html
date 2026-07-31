@@ -11,8 +11,13 @@
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
 		<!-- Fallback-Titel. Seiten überschreiben ihn mit <svelte:head>, aber ohne einen hier
 		     hätte jede Seite, die das vergisst, gar keinen — und ein Dokument ohne <title> ist
-		     ein WCAG-Verstoß (2.4.2) und in einer Leiste voller Tabs schlicht nicht
-		     wiederfindbar. Steht vor %sveltekit.head%, damit ein eigener Titel gewinnt. -->
+		     ein WCAG-Verstoß (2.4.2) und in einer Leiste voller Tabs nicht wiederfindbar.
+		     Steht vor der head-Einfügung unten, damit ein eigener Titel gewinnt.
+
+		     ACHTUNG: In dieser Datei niemals einen sveltekit-Platzhalter im Fließtext eines
+		     Kommentars erwähnen. Die Ersetzung trifft das ERSTE Vorkommen — sie würde hier
+		     zuschlagen, das Stylesheet in den Kommentar schreiben und den echten Platzhalter
+		     weiter unten als sichtbaren Text stehen lassen. -->
 		<title>Tallox — Einsatzplanung FK07</title>
 		%sveltekit.head%
 	</head>

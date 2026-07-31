@@ -63,7 +63,10 @@
 	{:else}
 		<!-- Kein Link: die Version gehört zu keinem Release (lokaler Build, `dev`, oder das
 		     Backend antwortet nicht). Siehe releaseUrl(). -->
-		<span title={tag.detail} class:text-error={!tag.reachable}>
+		<!-- Kein `text-error`: als Textfarbe auf base-100 unterschreitet es auf hellen Themes
+		     4.5:1. Den Zustand trägt hier ohnehin das „—" und der title; halbfett genügt als
+		     Hervorhebung und ist von der Themewahl unabhängig. -->
+		<span title={tag.detail} class:font-semibold={!tag.reachable}>
 			{tag.label}
 			{tag.value}
 		</span>
@@ -72,7 +75,7 @@
 
 <footer class="border-base-300 mt-8 border-t">
 	<div
-		class="text-base-content/50 mx-auto flex max-w-6xl flex-col gap-1 px-3 py-4 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-4 lg:px-8"
+		class="text-base-content/80 mx-auto flex max-w-6xl flex-col gap-1 px-3 py-4 text-xs sm:flex-row sm:items-center sm:justify-between sm:px-4 lg:px-8"
 	>
 		<p>
 			<span aria-hidden="true">🎓</span>

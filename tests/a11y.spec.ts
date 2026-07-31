@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { test, expect, KNOWN_A11Y_DEBT, PERSONAS, gotoRendered } from './fixtures';
+import { test, expect, KNOWN_A11Y_DEBT, PERSONAS, gotoRendered, openDropdown } from './fixtures';
 
 /**
  * Barrierefreiheit, automatisiert geprüft.
@@ -29,7 +29,7 @@ test.describe('Barrierefreiheit', () => {
 		// Dropdowns sind der klassische Fundort: ein `tabindex` auf einem nicht-interaktiven
 		// Element, ein fehlendes `aria-label`. Zugeklappt prüft axe das Menü gar nicht.
 		await gotoRendered(page, '/');
-		await page.getByRole('button', { name: /Design/ }).click();
+		await openDropdown(page, /Design/);
 		await checkA11y(page);
 	});
 
@@ -38,7 +38,7 @@ test.describe('Barrierefreiheit', () => {
 		// Leiste darüber und wird von der Desktop-Prüfung nie angefasst.
 		await page.setViewportSize({ width: 375, height: 812 });
 		await gotoRendered(page, '/');
-		await page.getByRole('button', { name: 'Bereiche' }).click();
+		await openDropdown(page, 'Bereiche');
 		await checkA11y(page);
 	});
 

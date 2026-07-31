@@ -24,3 +24,31 @@
 }
 
 @plugin "@tailwindcss/typography";
+
+/*
+ * Menü-Kontrast.
+ *
+ * daisyUI dämpft Einträge und Überschriften in `.menu` per Voreinstellung sehr stark ab: auf
+ * `nord` erreichen Einträge 2.22:1 und `.menu-title` sogar 1.34:1 gegen den Menühintergrund.
+ * WCAG 1.4.3 verlangt 4.5:1 — und die Hochschule ist eine öffentliche Stelle, für die BayEGovG
+ * und BITV 2.0 gelten.
+ *
+ * Betrifft beide Menüs der Navigationsleiste (Bereiche und Themewahl), also genau die Stellen,
+ * über die unterhalb von 1024px die gesamte Navigation läuft.
+ *
+ * `tests/contrast.spec.ts` prüft das über alle zwölf Themes; die 80 % sind der Wert, ab dem
+ * auch `winter` und `retro` bestehen. Siehe die Herleitung dort.
+ */
+.menu li > a,
+.menu li > button,
+.menu li > span {
+	color: var(--color-base-content);
+	/* daisyUI dämpft zusätzlich über `opacity`. Ohne das Zurücksetzen multipliziert sich die
+	   Abschwächung mit der Farbe und der Kontrast bleibt zu niedrig. */
+	opacity: 1;
+}
+
+.menu .menu-title {
+	color: color-mix(in oklab, var(--color-base-content) 80%, transparent);
+	opacity: 1;
+}

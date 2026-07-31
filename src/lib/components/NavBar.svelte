@@ -27,12 +27,19 @@
 		>
 			<span class="text-xl leading-none" aria-hidden="true">🎓</span>
 			<span class="text-lg font-semibold">Tallox</span>
-			<span class="text-base-content/60 hidden text-sm lg:inline">Einsatzplanung FK07</span>
+			<span class="text-base-content/80 hidden text-sm xl:inline">Einsatzplanung FK07</span>
 		</a>
 
-		<!-- Ab md nebeneinander, darunter im Hamburger. Tablet-first: 768px ist die Grenze,
-		     ab der die Bereichsleiste vollständig lesbar bleibt. -->
-		<ul class="ml-4 hidden flex-1 items-center gap-1 md:flex">
+		<!-- Ab lg nebeneinander, darunter im Hamburger.
+		     Ursprünglich md (768px). Dort passen die sieben Bereiche aber nicht: die Leiste
+		     wurde 883px breit und schob den Body über den Viewport — ausgerechnet ab der
+		     Breite, an der CLAUDE.md volle Benutzbarkeit zusagt. Gefunden von
+		     tests/responsive.spec.ts, das die Breiten seither bewacht.
+		     Tablet-first heißt vollständig bedienbar, nicht alles gleichzeitig sichtbar: bis
+		     1024px trägt das Menü die Navigation, und es enthält dieselben Einträge.
+		     Zusammen mit dem xl beim Marken-Untertitel oben — lg allein genügt nicht, weil
+		     lg *ab* 1024px greift und die Leiste bei genau 1024 sonst 1117px bräuchte. -->
+		<ul class="ml-4 hidden flex-1 items-center gap-1 lg:flex">
 			{#each NAV_ITEMS as item (item.label)}
 				<li>
 					{#if item.href}
@@ -49,7 +56,7 @@
 					{:else}
 						<span
 							title="{item.hint} — entsteht noch"
-							class="text-base-content/35 flex cursor-default items-center gap-1.5 px-2.5 py-1.5 text-sm"
+							class="text-base-content/80 flex cursor-default items-center gap-1.5 px-2.5 py-1.5 text-sm"
 						>
 							<span aria-hidden="true">{item.emoji}</span>{item.label}
 						</span>
@@ -58,20 +65,25 @@
 			{/each}
 		</ul>
 
-		<div class="ml-auto flex items-center gap-1 md:ml-0">
-			<!-- Erst ab lg: bei genau 768px stehen sieben Bereiche, Marke und Themewahl schon
-			     nebeneinander, und die Identität drängt die Leiste über die Breite. Darunter
-			     trägt sie das Menü unten. -->
+		<div class="ml-auto flex items-center gap-1 lg:ml-0">
+			<!-- Erst ab lg, also genau dort, wo auch die Bereichsleiste erscheint. Darunter
+			     trägt das Menü unten die Identität — sie fehlt also nie ganz, sie steht nur
+			     woanders. -->
 			{#if remoteUser}
 				<span
-					class="text-base-content/70 hidden items-center gap-1.5 text-sm lg:flex"
+					class="text-base-content/90 hidden items-center gap-1.5 text-sm lg:flex"
 					title={remoteUser}
 				>
 					<span aria-hidden="true">👤</span>{remoteDisplayname ?? remoteUser}
 				</span>
 			{:else}
+				<!-- Badge statt `text-warning`: die semantischen daisyUI-Farben sind
+				     Hintergrund­farben. Als Textfarbe auf base-100 erreichen sie auf den hellen
+				     Themes 1.35:1 bis 2.9:1 — weit unter den 4.5:1 aus WCAG 1.4.3. Als
+				     Badge-Hintergrund werden sie mit `warning-content` gepaart, und dieses
+				     Paar ist auf Kontrast ausgelegt. -->
 				<span
-					class="text-warning hidden items-center gap-1.5 text-sm lg:flex"
+					class="badge badge-warning badge-sm hidden items-center gap-1 lg:inline-flex"
 					title="Kein X-Remote-User — lokale Entwicklung ohne Auth-Proxy"
 				>
 					<span aria-hidden="true">🔓</span>anonym
@@ -80,7 +92,7 @@
 
 			<ThemeSwitcher current={theme} />
 
-			<div class="dropdown dropdown-end md:hidden">
+			<div class="dropdown dropdown-end lg:hidden">
 				<div tabindex="0" role="button" class="btn btn-ghost btn-sm" aria-label="Bereiche">
 					<span aria-hidden="true">☰</span>
 				</div>
@@ -93,7 +105,9 @@
 						{#if remoteUser}
 							<span aria-hidden="true">👤</span>{remoteDisplayname ?? remoteUser}
 						{:else}
-							<span class="text-warning"><span aria-hidden="true">🔓</span> anonym</span>
+							<span class="badge badge-warning badge-sm"
+								><span aria-hidden="true">🔓</span> anonym</span
+							>
 						{/if}
 					</li>
 
@@ -104,7 +118,7 @@
 									<span aria-hidden="true">{item.emoji}</span>{item.label}
 								</a>
 							{:else}
-								<span class="text-base-content/35">
+								<span class="text-base-content/80">
 									<span aria-hidden="true">{item.emoji}</span>{item.label}
 								</span>
 							{/if}
