@@ -55,6 +55,16 @@ The SSR hop bypasses the auth proxy, so this app relays the verified `X-Remote-U
 (see `src/lib/server/backend.ts`). Pointing `TALLOX_SERVER` at the public URL returns the IdP's
 HTML login page and surfaces as a 500.
 
+## Versioning
+
+Releases are cut by semantic-release from the Conventional Commits on `main`. The git tag is
+the source of truth; `package.json` stays at `0.0.0` and is never bumped.
+
+The **major follows [`tallox.go`](https://github.com/obcode/tallox.go)**. This app is generated
+against that backend's schema and has no persistence of its own, so a breaking API change is a
+breaking change here too. When the server's major moves, a commit with a `BREAKING CHANGE:`
+footer moves this one with it.
+
 ## License
 
 BSD 3-Clause. See [LICENSE](LICENSE).
