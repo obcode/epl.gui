@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { resolve } from '$app/paths';
-	import { anchorFor, type SchemaType } from '$lib/schemaDoc';
+	import { anchorFor, describeBlocks, inlineSegments, type SchemaType } from '$lib/schemaDoc';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
@@ -37,11 +37,20 @@
 				<span class="badge badge-ghost badge-sm">{type.kind}</span>
 			</h2>
 
-			{#if type.description}
-				<!-- whitespace-pre-line: die Beschreibungen im Schema sind mit Absätzen
-				     geschrieben, und ohne das würde daraus eine Textwand. -->
-				<p class="text-base-content/90 mt-2 text-sm whitespace-pre-line">{type.description}</p>
-			{/if}
+			<!-- Absätze statt whitespace-pre-line: die Umbrüche im Schema sitzen dort, wo der
+			     Quelltext umbricht, nicht wo der Browser umbrechen würde. describeBlocks()
+			     macht daraus wieder Absätze; die Leerzeile zwischen zweien bleibt eine Aussage. -->
+			{#each describeBlocks(type.description) as block, index (index)}
+				{#if block.kind === 'code'}
+					<pre class="bg-base-200 mt-2 overflow-x-auto rounded p-2 text-xs">{block.text}</pre>
+				{:else}
+					<p class="text-base-content/90 mt-2 text-sm">
+						{#each inlineSegments(block.text) as segment, part (part)}{#if segment.code}<code
+									class="bg-base-200 rounded px-1 font-mono text-xs">{segment.text}</code
+								>{:else}{segment.text}{/if}{/each}
+					</p>
+				{/if}
+			{/each}
 
 			{#if type.fields.length > 0}
 				<div class="mt-3 overflow-x-auto">
@@ -72,11 +81,19 @@
 											<span class="badge badge-warning badge-sm">veraltet</span>
 											<span class="text-base-content/90">{field.deprecationReason}</span>
 										{/if}
-										{#if field.description}
-											<div class="text-base-content/90 whitespace-pre-line">
-												{field.description}
-											</div>
-										{/if}
+										{#each describeBlocks(field.description) as block, index (index)}
+											{#if block.kind === 'code'}
+												<pre
+													class="bg-base-200 mt-1 overflow-x-auto rounded p-2 text-xs">{block.text}</pre>
+											{:else}
+												<div class="text-base-content/90 not-first:mt-2">
+													{#each inlineSegments(block.text) as segment, part (part)}{#if segment.code}<code
+																class="bg-base-200 rounded px-1 font-mono text-xs"
+																>{segment.text}</code
+															>{:else}{segment.text}{/if}{/each}
+												</div>
+											{/if}
+										{/each}
 										{#each field.args as arg (arg.name)}
 											{#if arg.description}
 												<div class="text-base-content/80 mt-1 text-xs">

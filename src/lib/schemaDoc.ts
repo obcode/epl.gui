@@ -139,6 +139,82 @@ function describe(type: GraphQLNamedType): SchemaType | null {
 }
 
 /**
+ * Ein Absatz einer Beschreibung, so wie er angezeigt wird.
+ *
+ * `code` behält seine Zeilenumbrüche, `text` wird neu umbrochen.
+ */
+export type DescriptionBlock = { kind: 'text' | 'code'; text: string };
+
+/**
+ * Bricht eine Beschreibung neu um.
+ *
+ * Die Beschreibungen im Schema sind Quelltext: sie sind auf knapp 100 Zeichen hart
+ * umbrochen, weil sie in einer `.graphqls`-Datei gelesen werden. Introspection reicht diese
+ * Zeilenumbrüche wörtlich weiter — sie stecken also in `schema.graphql` und damit hier. Auf
+ * einer Seite ergibt das Zeilen, die mitten im Satz enden, und zwar an einer Stelle, die mit
+ * der Breite des Browsers nichts zu tun hat.
+ *
+ * Einfach alle Umbrüche zu entfernen wäre falsch: die Leerzeile zwischen zwei Absätzen ist
+ * eine Aussage, und ohne sie wird aus einer strukturierten Erklärung eine Textwand. Also:
+ * Absätze bleiben, die harten Umbrüche innerhalb eines Absatzes verschwinden.
+ *
+ * Eingerückte Absätze bleiben, wie sie sind. Im heutigen Schema gibt es keine — aber ein
+ * Beispielaufruf oder eine kleine Tabelle in einer Beschreibung ist absehbar, und die durch
+ * einen Reflow zu schicken macht sie unlesbar.
+ */
+export function describeBlocks(description: string | null | undefined): DescriptionBlock[] {
+	if (!description) return [];
+
+	return description
+		.replace(/\r\n/g, '\n')
+		.split(/\n[ \t]*\n/)
+		.map((paragraph) => paragraph.replace(/\s+$/, ''))
+		.filter((paragraph) => paragraph.trim() !== '')
+		.map((paragraph) => {
+			const indented = paragraph.split('\n').some((line) => /^[ \t]{2,}\S/.test(line));
+			if (indented) return { kind: 'code' as const, text: paragraph };
+
+			return {
+				kind: 'text' as const,
+				text: paragraph.split('\n').join(' ').replace(/ {2,}/g, ' ')
+			};
+		});
+}
+
+/**
+ * Ein Stück Fließtext, entweder normal oder als Code ausgezeichnet.
+ */
+export type InlineSegment = { code: boolean; text: string };
+
+/**
+ * Zerlegt einen Absatz an den Backticks.
+ *
+ * GraphQL-Beschreibungen sind laut Spezifikation Markdown, und im Schema wird das auch
+ * benutzt: `null`, `@interactiveOnly`, `/api/graphql`. Wörtlich angezeigt stehen die
+ * Backticks als Zeichen auf der Seite und sehen aus wie ein Formatierungsfehler — was sie
+ * genau genommen auch sind.
+ *
+ * Zerlegt in Segmente statt HTML zu erzeugen: die Beschreibungen kommen aus einem anderen
+ * Repository, und ein `{@html}` mit fremdem Text wäre eine Einladung, die man nicht
+ * ausspricht. So bleibt jedes Segment ein Textknoten, den Svelte escaped.
+ *
+ * Mehr Markdown als das absichtlich nicht. Fett und Kursiv kommen in diesen Beschreibungen
+ * kaum vor, und eine halbe Markdown-Implementierung von Hand ist der Anfang einer ganzen.
+ */
+export function inlineSegments(text: string): InlineSegment[] {
+	const segments: InlineSegment[] = [];
+
+	// Ungerade Anzahl Backticks: dann ist der letzte keiner, der etwas öffnet. split() liefert
+	// die Teile abwechselnd, also fällt das von selbst richtig heraus.
+	text.split('`').forEach((part, index) => {
+		if (part === '') return;
+		segments.push({ code: index % 2 === 1, text: part });
+	});
+
+	return segments;
+}
+
+/**
  * Ein Anker für die Sprungmarken. Nur Buchstaben und Ziffern, damit er in eine URL passt und
  * nicht mit einem CSS-Selektor kollidiert.
  */
