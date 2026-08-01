@@ -2,6 +2,7 @@ import { AsyncLocalStorage } from 'node:async_hooks';
 import { env } from '$env/dynamic/private';
 import type { TypedDocumentNode } from '@graphql-typed-document-node/core';
 import { GraphQLClient, type Variables } from 'graphql-request';
+import { assumeHeaderValue } from '$lib/assumedRoles';
 
 /**
  * Identität des laufenden Requests.
@@ -15,6 +16,14 @@ import { GraphQLClient, type Variables } from 'graphql-request';
 export type AuthContext = {
 	remoteUser?: string;
 	remoteDisplayname?: string;
+	/**
+	 * Die Rollenverengung aus dem Cookie, siehe $lib/assumedRoles.
+	 *
+	 * `undefined` heißt „nicht verengt", ein leeres Array heißt „auf gar keine Rolle verengt".
+	 * Die beiden sind verschiedene Zustände und werden als „kein Header" bzw. „Header mit
+	 * leerem Wert" ans Backend weitergegeben.
+	 */
+	assumedRoles?: string[];
 };
 
 export const authContext = new AsyncLocalStorage<AuthContext>();
@@ -34,11 +43,19 @@ function serverUrl(): string {
  * werden.
  */
 export function backendClient(ctx?: AuthContext): GraphQLClient {
-	const { remoteUser, remoteDisplayname } = ctx ?? authContext.getStore() ?? {};
+	const { remoteUser, remoteDisplayname, assumedRoles } = ctx ?? authContext.getStore() ?? {};
 
 	const headers: Record<string, string> = {};
 	if (remoteUser) headers['X-Remote-User'] = remoteUser;
 	if (remoteDisplayname) headers['X-Remote-Displayname'] = remoteDisplayname;
+
+	// Der einzige Header hier, der Rechte betrifft und trotzdem nicht vom Proxy kommt. Das ist
+	// in Ordnung, weil er nur wegnehmen kann: das Backend schneidet die Auswahl mit den
+	// tatsächlich gehaltenen Rollen. Der leere String ist ein gültiger Wert und bedeutet
+	// „beurteile mich wie jemanden ohne jede Rolle" — deshalb die Prüfung auf undefined und
+	// nicht auf truthiness.
+	const assume = assumeHeaderValue(assumedRoles);
+	if (assume !== undefined) headers['X-Tallox-Assume-Roles'] = assume;
 
 	return new GraphQLClient(serverUrl(), { headers });
 }

@@ -58,6 +58,25 @@ where one forgotten call site would be a silent authorization failure.
 `backendClient()` builds its headers **from scratch**. Client-supplied `Authorization` or
 `X-Remote-*` headers are never forwarded.
 
+One header goes the other way: `X-Tallox-Assume-Roles`, built from the `tallox_assume` cookie
+in `hooks.server.ts` and relayed the same way as the identity. It is the role preview, and it
+is safe to relay unvalidated because `policy.Narrow` in the backend intersects the selection
+with the grants the person actually holds — a hand-written cookie takes privileges away from
+its author and does nothing else. Validating it here would create a second opinion about
+permissions, and two opinions about permissions is one more than this project may have.
+
+`undefined` means "not narrowed", `[]` means "narrowed to no role at all". They are different
+states and travel as "no header" and "header with an empty value" — see `$lib/assumedRoles.ts`.
+
+**Three failure modes, three different pages.** A person with an HM login but no row in
+`person` is not a broken backend, and used to be shown as one ("Backend nicht erreichbar" in
+the footer). `loadSession()` separates them by HTTP status: 401 is "no account here" and
+becomes a 403 from the root layout, 503 and a dead socket are "temporarily unreachable" and
+the app keeps rendering. Because SvelteKit does not render `+error.svelte` for a failure in
+the root layout — that layout is the thing that failed — the no-account page is
+`src/error.html`, self-contained with its own inline CSS. `+error.svelte` covers page-level
+errors inside the shell.
+
 ## Data fetching
 
 - **SSR loads** — `+page.server.ts` calls `backendRequest(...)`.
@@ -145,7 +164,12 @@ These follow from the domain, not from taste. Full reasoning in the backend's
   Everything else becomes a generic sentence. Never branch on the German text: that is the
   half somebody rewords after a support question.
 - Role-based hiding (buttons, menu entries) is **cosmetic**. Write it for clarity, never rely
-  on it.
+  on it. It is worth doing anyway: somebody who sees "Statistik" in the menu and gets a
+  refusal on every click learns to ignore refusals.
+- **Build the navigation from `session.effectiveRoles`, never from `me.roles`.** The two
+  differ the moment somebody narrows their roles, and a menu built from the held ones shows
+  the view of a person whose permissions the server is no longer applying — which answers
+  exactly the wrong question for the feature that exists to answer it.
 
 ## Tests
 
