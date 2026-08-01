@@ -115,6 +115,9 @@ jobs:
       - name: install chromium
         run: pnpm exec playwright install --with-deps chromium
 
+      # Das Backend hat beim Start migriert, also gibt es die Tabellen jetzt. Die Personen
+      # legt globalSetup in playwright.config.ts an — hier steht nur, dass psql dafür da sein
+      # muss; auf ubuntu-latest ist es vorinstalliert.
       - name: e2e
         run: pnpm run test:e2e
 

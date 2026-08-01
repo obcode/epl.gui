@@ -17,7 +17,14 @@ const config: CodegenConfig = {
 		'./src/lib/gql/__generated__/': {
 			preset: 'client',
 			config: {
-				useTypeImports: true
+				useTypeImports: true,
+				// Ohne diese Zuordnung wird jeder eigene Skalar zu `unknown`, und jede Stelle,
+				// die einen Zeitpunkt formatiert, braucht einen Cast — also genau die
+				// Behauptung, die der Codegen ersetzen soll. Auf der Leitung ist `Time` ein
+				// RFC-3339-String; ein `Date` wäre gelogen, weil JSON keins kennt.
+				scalars: {
+					Time: 'string'
+				}
 			}
 		}
 	}

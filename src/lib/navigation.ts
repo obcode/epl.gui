@@ -35,3 +35,26 @@ export function isActive(item: NavItem, pathname: string): boolean {
 	if (item.href === '/') return pathname === '/';
 	return pathname === item.href || pathname.startsWith(`${item.href}/`);
 }
+
+/**
+ * Was nicht zum Planungsprozess gehört, aber trotzdem erreichbar sein muss.
+ *
+ * Getrennt von NAV_ITEMS, weil die Bereichsleiste die *Schritte des Prozesses* zeigt —
+ * Konto und API sind keine Schritte, sondern Werkzeuge. In die Leiste einsortiert würden sie
+ * die Reihenfolge unlesbar machen, die dort der ganze Punkt ist; sie stehen deshalb im Menü
+ * bei der Identität.
+ */
+export const ACCOUNT_ITEMS: readonly NavItem[] = [
+	{
+		emoji: '🔑',
+		label: 'Tokens',
+		href: '/konto/tokens',
+		hint: 'Personal Access Tokens für eigene Auswertungen'
+	},
+	{
+		emoji: '📖',
+		label: 'API-Doku',
+		href: '/api-doku',
+		hint: 'Wie man die API aus einem Skript benutzt'
+	}
+];

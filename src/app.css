@@ -52,3 +52,34 @@
 	color: color-mix(in oklab, var(--color-base-content) 80%, transparent);
 	opacity: 1;
 }
+
+/*
+ * Tabellenkopf- und Tab-Kontrast.
+ *
+ * Dieselbe Ursache wie beim Menü oben, an zwei weiteren Stellen: daisyUI dämpft `thead th` auf
+ * 3.49:1 und den inaktiven `.tab` auf 2.66:1 gegen den jeweiligen Hintergrund — beides unter
+ * den 4.5:1 aus WCAG 1.4.3.
+ *
+ * Es sind die zwei Bauteile, an denen Information hängt, die man nicht raten kann: die
+ * Spaltenüberschrift sagt, was in der Spalte steht, und der inaktive Tab ist die einzige
+ * Anzeige dafür, dass es weitere Beispiele gibt. Gefunden von tests/tokens.spec.ts und
+ * tests/apiDocs.spec.ts, überwacht über alle zwölf Themes von tests/contrast.spec.ts.
+ *
+ * 80 % statt voller Deckkraft: der Kopf soll sich weiter von den Datenzeilen abheben — nur
+ * eben oberhalb der Schwelle statt darunter. Unter 80 % fällt `base-content` auf `winter` und
+ * `retro` wieder durch.
+ */
+.table thead th,
+.table tfoot th {
+	color: color-mix(in oklab, var(--color-base-content) 80%, transparent);
+	opacity: 1;
+}
+
+.tabs .tab {
+	color: color-mix(in oklab, var(--color-base-content) 80%, transparent);
+	opacity: 1;
+}
+
+.tabs .tab.tab-active {
+	color: var(--color-base-content);
+}

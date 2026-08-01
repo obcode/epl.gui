@@ -15,9 +15,15 @@ import type { TypedDocumentNode as DocumentNode } from '@graphql-typed-document-
  */
 type Documents = {
     "\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tversion\n\t\t\tcommit\n\t\t\tbuiltAt\n\t\t}\n\t}\n": typeof types.BuildInfoDocument,
+    "\n\tquery MyTokens {\n\t\tmyTokens {\n\t\t\tid\n\t\t\tdescription\n\t\t\tcreatedAt\n\t\t\texpiresAt\n\t\t\tlastUsedAt\n\t\t\trevokedAt\n\t\t}\n\t}\n": typeof types.MyTokensDocument,
+    "\n\tmutation CreatePersonalAccessToken($description: String!, $expiresInDays: Int) {\n\t\tcreatePersonalAccessToken(description: $description, expiresInDays: $expiresInDays) {\n\t\t\tsecret\n\t\t\ttoken {\n\t\t\t\tid\n\t\t\t\tdescription\n\t\t\t\tcreatedAt\n\t\t\t\texpiresAt\n\t\t\t\tlastUsedAt\n\t\t\t\trevokedAt\n\t\t\t}\n\t\t}\n\t}\n": typeof types.CreatePersonalAccessTokenDocument,
+    "\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.RevokePersonalAccessTokenDocument,
 };
 const documents: Documents = {
     "\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tversion\n\t\t\tcommit\n\t\t\tbuiltAt\n\t\t}\n\t}\n": types.BuildInfoDocument,
+    "\n\tquery MyTokens {\n\t\tmyTokens {\n\t\t\tid\n\t\t\tdescription\n\t\t\tcreatedAt\n\t\t\texpiresAt\n\t\t\tlastUsedAt\n\t\t\trevokedAt\n\t\t}\n\t}\n": types.MyTokensDocument,
+    "\n\tmutation CreatePersonalAccessToken($description: String!, $expiresInDays: Int) {\n\t\tcreatePersonalAccessToken(description: $description, expiresInDays: $expiresInDays) {\n\t\t\tsecret\n\t\t\ttoken {\n\t\t\t\tid\n\t\t\t\tdescription\n\t\t\t\tcreatedAt\n\t\t\t\texpiresAt\n\t\t\t\tlastUsedAt\n\t\t\t\trevokedAt\n\t\t\t}\n\t\t}\n\t}\n": types.CreatePersonalAccessTokenDocument,
+    "\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": types.RevokePersonalAccessTokenDocument,
 };
 
 /**
@@ -38,6 +44,18 @@ export function graphql(source: string): unknown;
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tversion\n\t\t\tcommit\n\t\t\tbuiltAt\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery BuildInfo {\n\t\tbuildInfo {\n\t\t\tversion\n\t\t\tcommit\n\t\t\tbuiltAt\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tquery MyTokens {\n\t\tmyTokens {\n\t\t\tid\n\t\t\tdescription\n\t\t\tcreatedAt\n\t\t\texpiresAt\n\t\t\tlastUsedAt\n\t\t\trevokedAt\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery MyTokens {\n\t\tmyTokens {\n\t\t\tid\n\t\t\tdescription\n\t\t\tcreatedAt\n\t\t\texpiresAt\n\t\t\tlastUsedAt\n\t\t\trevokedAt\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation CreatePersonalAccessToken($description: String!, $expiresInDays: Int) {\n\t\tcreatePersonalAccessToken(description: $description, expiresInDays: $expiresInDays) {\n\t\t\tsecret\n\t\t\ttoken {\n\t\t\t\tid\n\t\t\t\tdescription\n\t\t\t\tcreatedAt\n\t\t\t\texpiresAt\n\t\t\t\tlastUsedAt\n\t\t\t\trevokedAt\n\t\t\t}\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation CreatePersonalAccessToken($description: String!, $expiresInDays: Int) {\n\t\tcreatePersonalAccessToken(description: $description, expiresInDays: $expiresInDays) {\n\t\t\tsecret\n\t\t\ttoken {\n\t\t\t\tid\n\t\t\t\tdescription\n\t\t\t\tcreatedAt\n\t\t\t\texpiresAt\n\t\t\t\tlastUsedAt\n\t\t\t\trevokedAt\n\t\t\t}\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n"];
 
 export function graphql(source: string) {
   return (documents as any)[source] ?? {};
