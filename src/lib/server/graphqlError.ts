@@ -34,7 +34,19 @@ const PASS_THROUGH = new Set([
 	'TOKEN_DESCRIPTION_TOO_LONG',
 	'TOKEN_LIFETIME_OUT_OF_RANGE',
 	'TOKEN_NOT_FOUND',
-	'UNAUTHENTICATED'
+	'UNAUTHENTICATED',
+	// Die Verwaltung. Anders als beim Wunsch-Schreibpfad verrät hier nichts etwas: wer diese
+	// Sätze zu sehen bekommt, sitzt vor einer Liste, die ohnehin alle Personen zeigt.
+	// „Diese Person gibt es schon" ist dort schlicht die nützlichere Auskunft.
+	'FORBIDDEN',
+	'LAST_ADMIN',
+	'INVALID_MAIL',
+	'INVALID_ID',
+	'PERSON_EXISTS',
+	'PERSON_NOT_FOUND',
+	'NAME_TOO_LONG',
+	'UNKNOWN_ROLE',
+	'GRANT_EXPIRY_OUT_OF_RANGE'
 ]);
 
 /** Was angezeigt wird, wenn der Fehler keiner der bekannten ist. */
@@ -67,6 +79,22 @@ export function toRefusal(error: unknown): BackendRefusal {
 		}
 	}
 	return { code: 'UNKNOWN', message: GENERIC_MESSAGE };
+}
+
+/**
+ * Der HTTP-Status, unter dem das Backend abgelehnt hat — oder `undefined`, wenn es gar nicht
+ * geantwortet hat.
+ *
+ * Nötig, weil die Ablehnungen aus `internal/auth` alle denselben Code `UNAUTHENTICATED`
+ * tragen und der Unterschied zwischen „für diese Kennung gibt es kein Konto" (401) und „ich
+ * kann gerade niemanden prüfen, die Datenbank startet neu" (503) genau im Status steckt.
+ * Ohne diese Unterscheidung wird ein Deploy zu einer Welle von Leuten, die glauben, ihr
+ * Zugang sei weg.
+ */
+export function httpStatusOf(error: unknown): number | undefined {
+	if (!error || typeof error !== 'object') return undefined;
+	const status = (error as { response?: { status?: unknown } }).response?.status;
+	return typeof status === 'number' ? status : undefined;
 }
 
 /** Holt die GraphQL-Fehlerliste aus dem, was graphql-request geworfen hat. */

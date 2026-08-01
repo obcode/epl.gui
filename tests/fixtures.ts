@@ -18,7 +18,9 @@ export const PERSONAS = {
 	/** Unbeteiligte Kollegin — die Person, vor der die Wunsch-Vertraulichkeit schützt. */
 	zwei: { mail: 'prof.zwei@example.org', name: 'Prof. Zwei' },
 	/** Planerin: sieht Wünsche vor der Veröffentlichung, weil der Prozess es verlangt. */
-	vier: { mail: 'prof.vier@example.org', name: 'Prof. Vier' }
+	vier: { mail: 'prof.vier@example.org', name: 'Prof. Vier' },
+	/** Verwaltet Personen und Rollen — und liest bewusst keine Wünsche. */
+	sechs: { mail: 'admin@example.org', name: 'Admin' }
 } as const;
 
 export type Persona = (typeof PERSONAS)[keyof typeof PERSONAS];

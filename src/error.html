@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="de">
+	<head>
+		<meta charset="utf-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1" />
+		<title>Tallox — %sveltekit.status%</title>
+		<!--
+			Diese Seite erscheint, wenn das Root-Layout selbst nicht laden konnte. In der Praxis ist
+			das genau ein Fall: jemand ist durch die HM-Anmeldung gekommen, aber diese Installation
+			kennt die Kennung nicht — oder das Konto ist deaktiviert. SvelteKit rendert dafür nicht
+			`+error.svelte`, weil dessen Rahmen ja gerade das ist, was fehlgeschlagen ist.
+
+			Deshalb steht hier alles inline und nichts kommt aus der App: kein Tailwind, kein
+			daisyUI, keine Schriftart von außen. Eine Fehlerseite, die ihre eigenen Abhängigkeiten
+			braucht, ist genau dann kaputt, wenn man sie braucht.
+		-->
+		<style>
+			:root {
+				color-scheme: light dark;
+				--bg: #fafafa;
+				--fg: #1c1c1c;
+				--muted: #4a4a4a;
+				--card: #ffffff;
+				--line: #e2e2e2;
+			}
+			@media (prefers-color-scheme: dark) {
+				:root {
+					--bg: #1a1a1a;
+					--fg: #ededed;
+					--muted: #b4b4b4;
+					--card: #232323;
+					--line: #383838;
+				}
+			}
+			body {
+				margin: 0;
+				padding: 2rem 1rem;
+				background: var(--bg);
+				color: var(--fg);
+				font-family:
+					system-ui,
+					-apple-system,
+					'Segoe UI',
+					sans-serif;
+				line-height: 1.5;
+			}
+			main {
+				max-width: 42rem;
+				margin: 0 auto;
+			}
+			h1 {
+				font-size: 1.5rem;
+				margin: 0 0 0.25rem;
+			}
+			.status {
+				color: var(--muted);
+				font-size: 0.875rem;
+				margin: 0 0 1.5rem;
+			}
+			.card {
+				background: var(--card);
+				border: 1px solid var(--line);
+				border-radius: 0.5rem;
+				padding: 1rem;
+			}
+			.card p {
+				margin: 0;
+			}
+			.card p + p {
+				margin-top: 0.75rem;
+				color: var(--muted);
+				font-size: 0.875rem;
+			}
+			.brand {
+				color: var(--muted);
+				font-size: 0.875rem;
+				margin-top: 2rem;
+			}
+		</style>
+	</head>
+	<body>
+		<main>
+			<h1>Kein Zugang zu Tallox</h1>
+			<p class="status">Fehler %sveltekit.status%</p>
+
+			<div class="card">
+				<p>%sveltekit.error.message%</p>
+				<p>
+					Die Anmeldung an der Hochschule hat funktioniert — Tallox führt aber eine eigene Liste,
+					wer damit arbeiten darf. Wer dort noch fehlt, wird von der Administration eingetragen;
+					dafür genügt die Mailadresse.
+				</p>
+			</div>
+
+			<p class="brand">🎓 Tallox — Einsatzplanung FK07</p>
+		</main>
+	</body>
+</html>

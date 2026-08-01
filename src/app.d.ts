@@ -6,6 +6,11 @@ declare global {
 			/** Verifizierte Mailadresse, vom Auth-Proxy gesetzt. Lokal undefined. */
 			remoteUser?: string;
 			remoteDisplayname?: string;
+			/**
+			 * Rollenverengung aus dem Cookie. `undefined` = nicht verengt, `[]` = auf gar
+			 * keine Rolle verengt. Siehe $lib/assumedRoles.
+			 */
+			assumedRoles?: string[];
 			/** Aus dem Cookie aufgelöst, siehe hooks.server.ts. Nie ein ungeprüfter Wert. */
 			theme: ThemeChoice;
 		}

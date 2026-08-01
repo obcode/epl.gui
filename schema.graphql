@@ -37,6 +37,30 @@ directive @specifiedBy(
   url: String!
 ) on SCALAR
 
+"""
+Why somebody sees what they see.
+
+Answers with decisions, never with content: it says whether a rule lets this person past, and
+it never reads the thing behind the rule. That is what makes it usable for the ordinary
+support question — "why can my colleague not see this" — without becoming a way around the
+confidentiality it is describing.
+"""
+type AccessDiagnosis {
+  """The person the diagnosis is about."""
+  person: Person!
+
+  """
+  An inactive person fails authentication on both doors, whatever roles they hold.
+  """
+  active: Boolean!
+
+  """Their grants, expired ones included."""
+  grants: [RoleGrant!]!
+
+  """What the rules answer for this person, one entry per rule."""
+  decisions: [PolicyDecision!]!
+}
+
 """Version and provenance of the running server instance."""
 type BuildInfo {
   """Semantic version from the release tag, or `dev` in a local build."""
@@ -99,6 +123,49 @@ type Mutation {
   does not exist and a token belonging to somebody else produce the same refusal.
   """
   revokePersonalAccessToken(id: ID!): PersonalAccessToken!
+
+  """
+  Add somebody to this installation.
+  
+  The mail address is all that is required, and it is the only thing that has to be right: it
+  is what the login asserts, so it decides whether this person can sign in at all. The name
+  can be filled in later, by them or by an import. Requiring it here would mean finding out
+  how a new colleague spells their first name before their account can exist.
+  
+  A new person holds no roles. Even LECTURER is granted explicitly, so that who may do what is
+  a list somebody wrote rather than a default nobody chose.
+  """
+  createPerson(mail: String!, name: String): Person!
+
+  """Set somebody's display name."""
+  renamePerson(id: ID!, name: String!): Person!
+
+  """
+  Bring somebody's roles to exactly this set.
+  
+  The whole set rather than add and remove, because that is what the screen shows and because
+  add/remove loses to a race the moment two administrators have the same person open: the
+  second one's stale view of what the first did would decide the outcome.
+  
+  `expiresAt` applies to the roles being *added*. Roles already held keep their own expiry
+  unless they are re-granted, so re-sending an unchanged set does not silently extend
+  anything.
+  
+  Refused with `LAST_ADMIN` when it would leave the installation with nobody who can
+  administer it.
+  """
+  setPersonRoles(id: ID!, roles: [Role!]!, expiresAt: Time): Person!
+
+  """
+  Activate or deactivate somebody.
+  
+  Deactivating is the removal this system has: an inactive person fails authentication on both
+  doors, so it withdraws their tokens in the same moment without touching a token row.
+  
+  Refused with `LAST_ADMIN` when it would deactivate the last administrator — that is the same
+  refusal as taking their ADMIN away, because it has the same consequence.
+  """
+  setPersonActive(id: ID!, active: Boolean!): Person!
 }
 
 """
@@ -167,6 +234,22 @@ type PersonalAccessToken {
   revokedAt: Time
 }
 
+"""One rule, and what it answers for this person."""
+type PolicyDecision {
+  """
+  The rule, named as it is named in the source — so that a report can be acted on.
+  """
+  rule: String!
+
+  """What the rule answers for this person right now."""
+  allowed: Boolean!
+
+  """
+  Why, in a sentence somebody without the source in front of them can use.
+  """
+  reason: String!
+}
+
 """
 Everything that can be read.
 
@@ -184,6 +267,34 @@ type Query {
   buildInfo: BuildInfo!
 
   """
+  Everybody this installation knows.
+  
+  `search` matches a substring of the mail address or the name. `includeInactive` brings back
+  the people who have been deactivated; they are hidden by default because the list is
+  otherwise mostly leavers after a few years.
+  """
+  people(search: String, includeInactive: Boolean): [Person!]
+
+  """One person, or `null` if there is nobody with that id."""
+  person(id: ID!): Person
+
+  """
+  One person's role grants, expired ones included.
+  
+  Separate from `Person.roles`, which is the set in force right now. The two answer different
+  questions and merging them would lose the one this is for.
+  """
+  roleGrants(personId: ID!): [RoleGrant!]
+
+  """
+  Why a given person sees what they see.
+  
+  Takes the mail address rather than an id, because the question arrives as "Kollegin X says
+  she cannot see the demand planning" and the address is what the asker has.
+  """
+  diagnoseAccess(mail: String!): AccessDiagnosis
+
+  """
   Who you are, as far as this server is concerned — or `null` if you are not signed in.
   
   The field to start with when writing a script: getting a person back means the token is
@@ -191,6 +302,14 @@ type Query {
   by. It is the same field the web interface uses, so it cannot answer differently there.
   """
   me: Person
+
+  """
+  How this request is being judged: identity, effective roles, and whether they were narrowed.
+  
+  Answers for anonymous callers too, with `person: null` and no roles — the interface renders
+  a signed-out state from it rather than from a failed query.
+  """
+  session: Session!
 
   """
   Your own tokens. Never anybody else's.
@@ -230,6 +349,84 @@ enum Role {
   Administers people, roles and tokens. Not a reader of unpublished wishes.
   """
   ADMIN
+}
+
+"""
+One role grant, as stored — including one that has already expired.
+
+Deliberately unfiltered, unlike `Person.roles`. "DEANS_OFFICE, granted on Tuesday by X,
+expired on Wednesday" is the answer to the only question this record gets asked: who could see
+what, and when.
+"""
+type RoleGrant {
+  """The role that was granted."""
+  role: Role!
+
+  """
+  When it was granted. Refreshed when the same grant is re-issued with a new expiry.
+  """
+  grantedAt: Time!
+
+  """
+  Who granted it, or `null` for a grant no human decided — the reconciliation of the
+  protected administrators from the configuration file, or a future import.
+  """
+  grantedBy: Person
+
+  """
+  When it stops taking effect, or `null` if it does not expire.
+  
+  A grant with a date on it is how somebody steps over a threshold and has the database step
+  back over it for them. The intended use is "let me look at this until this evening", not a
+  way to hold a role for a semester — a grant meant to last that long should be visible as a
+  permanent one rather than as a date nobody rereads.
+  """
+  expiresAt: Time
+}
+
+"""
+How the current request is being judged.
+
+Read this rather than `me` when the question is "what may I do right now": it accounts for a
+role narrowing, which `me` deliberately does not.
+"""
+type Session {
+  """
+  Who you are, or `null` if you are not signed in. The same value as the `me` query.
+  """
+  person: Person
+
+  """
+  The roles this request is actually judged by.
+  
+  Equal to `grantedRoles` unless you asked to be narrowed. This is the list an interface
+  should render its navigation from.
+  """
+  effectiveRoles: [Role!]!
+
+  """
+  The roles you hold, whatever you are currently being judged by.
+  
+  What you get back by ending the narrowing — which is why the control that ends it must not
+  itself be hidden by the narrowing.
+  """
+  grantedRoles: [Role!]!
+
+  """
+  Whether you asked to be judged by fewer roles than you hold.
+  
+  `true` means what you are looking at is a preview and not your own view. Say so visibly:
+  somebody who forgets they are narrowed will eventually report a missing feature as a bug.
+  """
+  narrowed: Boolean!
+
+  """
+  Whether this is a signed-in browser session rather than a Personal Access Token.
+  
+  `false` means the `@interactiveOnly` fields will answer `null` — worth checking before
+  concluding that something is empty.
+  """
+  interactive: Boolean!
 }
 
 """

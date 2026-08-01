@@ -2,20 +2,34 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
-	import { ACCOUNT_ITEMS, isActive, NAV_ITEMS } from '$lib/navigation';
+	import { ACCOUNT_ITEMS, isActive, NAV_ITEMS, visibleNavItems } from '$lib/navigation';
+	import RoleSwitcher from './RoleSwitcher.svelte';
 	import type { ThemeChoice } from '$lib/themes';
 
 	let {
 		theme,
 		remoteUser,
-		remoteDisplayname
+		remoteDisplayname,
+		effectiveRoles,
+		grantedRoles,
+		narrowed
 	}: {
 		theme: ThemeChoice;
 		remoteUser: string | null;
 		remoteDisplayname: string | null;
+		/** Die Rollen, nach denen der Server diesen Request beurteilt — nicht die gehaltenen. */
+		effectiveRoles: readonly string[];
+		grantedRoles: readonly string[];
+		narrowed: boolean;
 	} = $props();
 
 	const pathname = $derived(page.url.pathname);
+
+	// Kosmetik, kein Riegel: dieselbe API ist mit einem Token direkt erreichbar. Was das
+	// Ausblenden trotzdem wert ist: wer „Statistik" im Menü sieht und bei jedem Klick eine
+	// Ablehnung bekommt, lernt, Ablehnungen zu ignorieren.
+	const areas = $derived(visibleNavItems(NAV_ITEMS, effectiveRoles));
+	const account = $derived(visibleNavItems(ACCOUNT_ITEMS, effectiveRoles));
 </script>
 
 <header class="border-base-300 bg-base-100 sticky top-0 z-20 border-b">
@@ -40,7 +54,7 @@
 		     Zusammen mit dem xl beim Marken-Untertitel oben — lg allein genügt nicht, weil
 		     lg *ab* 1024px greift und die Leiste bei genau 1024 sonst 1117px bräuchte. -->
 		<ul class="ml-4 hidden flex-1 items-center gap-1 lg:flex">
-			{#each NAV_ITEMS as item (item.label)}
+			{#each areas as item (item.label)}
 				<li>
 					{#if item.href}
 						<a
@@ -87,7 +101,7 @@
 						tabindex="0"
 						class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-10 mt-2 w-56 border p-2 shadow-lg"
 					>
-						{#each ACCOUNT_ITEMS as item (item.label)}
+						{#each account as item (item.label)}
 							<li>
 								<a
 									href={resolve(item.href!)}
@@ -114,6 +128,8 @@
 				</span>
 			{/if}
 
+			<RoleSwitcher {grantedRoles} {effectiveRoles} {narrowed} />
+
 			<ThemeSwitcher current={theme} />
 
 			<div class="dropdown dropdown-end lg:hidden">
@@ -135,7 +151,7 @@
 						{/if}
 					</li>
 
-					{#each NAV_ITEMS as item (item.label)}
+					{#each areas as item (item.label)}
 						<li>
 							{#if item.href}
 								<a href={resolve(item.href)} class:menu-active={isActive(item, pathname)}>
@@ -154,7 +170,7 @@
 					     Art von Unterschied, die niemand vermutet und jeder sucht. -->
 					<li></li>
 					<li class="menu-title">Konto</li>
-					{#each ACCOUNT_ITEMS as item (item.label)}
+					{#each account as item (item.label)}
 						<li>
 							<a href={resolve(item.href!)} class:menu-active={isActive(item, pathname)}>
 								<span aria-hidden="true">{item.emoji}</span>{item.label}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { ACCOUNT_ITEMS, isActive, NAV_ITEMS } from './navigation';
+import { ACCOUNT_ITEMS, isActive, NAV_ITEMS, visibleNavItems } from './navigation';
 
 describe('isActive', () => {
 	it('markiert die Startseite nur bei genau /', () => {
@@ -54,5 +54,45 @@ describe('ACCOUNT_ITEMS', () => {
 		const api = ACCOUNT_ITEMS.find((item) => item.href === '/api-doku')!;
 		expect(isActive(api, '/api-doku/schema')).toBe(true);
 		expect(isActive(api, '/')).toBe(false);
+	});
+});
+
+describe('visibleNavItems', () => {
+	it('zeigt Einträge ohne Rollenangabe allen', () => {
+		const items = [{ emoji: '🏠', label: 'Start', href: '/' as const, hint: 'x' }];
+		expect(visibleNavItems(items, [])).toEqual(items);
+	});
+
+	it('blendet aus, wofür die Rolle fehlt', () => {
+		const items = [
+			{ emoji: '📊', label: 'Statistik', hint: 'x', roles: ['DEANS_OFFICE'] as const },
+			{ emoji: '✋', label: 'Wünsche', hint: 'x' }
+		];
+		expect(visibleNavItems(items, ['LECTURER']).map((i) => i.label)).toEqual(['Wünsche']);
+		expect(visibleNavItems(items, ['DEANS_OFFICE']).map((i) => i.label)).toEqual([
+			'Statistik',
+			'Wünsche'
+		]);
+	});
+
+	it('reicht eine der genannten Rollen', () => {
+		const items = [
+			{
+				emoji: '🧩',
+				label: 'Zuteilung',
+				hint: 'x',
+				roles: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE'] as const
+			}
+		];
+		expect(visibleNavItems(items, ['PROGRAMME_LEAD'])).toHaveLength(1);
+	});
+
+	it('zeigt die Verwaltung nur der Administration', () => {
+		// Kosmetik, kein Riegel — der steht in policy.MayAdministerPeople und gilt auch für die
+		// Token-Tür. Trotzdem geprüft: wer den Eintrag sieht und bei jedem Klick eine Ablehnung
+		// bekommt, lernt, Ablehnungen zu ignorieren.
+		const labels = (roles: string[]) => visibleNavItems(ACCOUNT_ITEMS, roles).map((i) => i.label);
+		expect(labels(['LECTURER'])).not.toContain('Verwaltung');
+		expect(labels(['ADMIN'])).toContain('Verwaltung');
 	});
 });

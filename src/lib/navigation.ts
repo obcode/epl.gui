@@ -1,4 +1,6 @@
 import type { RouteId } from '$app/types';
+import type { Role } from '$lib/gql/__generated__/graphql';
+import { hasAnyRole } from '$lib/roles';
 
 /**
  * Die Bereiche der Anwendung, in der Reihenfolge des Planungsprozesses.
@@ -17,16 +19,42 @@ export type NavItem = {
 	href?: RouteId;
 	/** Kurze Erläuterung, erscheint als title. */
 	hint: string;
+	/**
+	 * Wer den Eintrag sieht. Fehlt das Feld, sehen ihn alle.
+	 *
+	 * **Kosmetik, kein Riegel.** Dieselbe API ist mit einem Personal Access Token direkt
+	 * erreichbar, unter Umgehung dieser Anwendung — was hier versteckt wird, ist damit nicht
+	 * geschützt, sondern nur nicht im Weg. Der Riegel steht in `internal/policy`.
+	 *
+	 * Was es trotzdem wert ist: eine Dozentin, die „Statistik" und „Bedarf" im Menü sieht und
+	 * bei jedem Klick eine Ablehnung bekommt, lernt, Ablehnungen zu ignorieren.
+	 */
+	roles?: readonly Role[];
 };
 
 export const NAV_ITEMS: readonly NavItem[] = [
 	{ emoji: '🏠', label: 'Start', href: '/', hint: 'Übersicht' },
 	{ emoji: '📚', label: 'Module', hint: 'Modulkatalog mit Heimatstudiengang' },
 	{ emoji: '🗓️', label: 'Semester', hint: 'Semester, Phasen und Meilensteine' },
-	{ emoji: '🎯', label: 'Bedarf', hint: 'Welche Instanzen müssen angeboten werden?' },
+	{
+		emoji: '🎯',
+		label: 'Bedarf',
+		hint: 'Welche Instanzen müssen angeboten werden?',
+		roles: ['PROGRAMME_LEAD', 'DEANS_OFFICE']
+	},
 	{ emoji: '✋', label: 'Wünsche', hint: 'Interesse an Instanz-Teilen bekunden' },
-	{ emoji: '🧩', label: 'Zuteilung', hint: 'Instanzen besetzen' },
-	{ emoji: '📊', label: 'Statistik', hint: 'Auswertungen für das Dekanat' }
+	{
+		emoji: '🧩',
+		label: 'Zuteilung',
+		hint: 'Instanzen besetzen',
+		roles: ['SUBJECT_GROUP_LEAD', 'PROGRAMME_LEAD', 'DEANS_OFFICE']
+	},
+	{
+		emoji: '📊',
+		label: 'Statistik',
+		hint: 'Auswertungen für das Dekanat',
+		roles: ['DEANS_OFFICE']
+	}
 ];
 
 /** Nur exakte Treffer: sonst wäre bei `/` jeder Eintrag aktiv. */
@@ -56,5 +84,27 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		label: 'API-Doku',
 		href: '/api-doku',
 		hint: 'Wie man die API aus einem Skript benutzt'
+	},
+	{
+		emoji: '🛠️',
+		label: 'Verwaltung',
+		href: '/verwaltung/personen',
+		hint: 'Wer Tallox benutzen darf, und mit welchen Rollen',
+		roles: ['ADMIN']
 	}
 ];
+
+/**
+ * Filtert Einträge auf die, die diese Rollen sehen sollen.
+ *
+ * Bekommt die **effektiven** Rollen aus `session.effectiveRoles`, nicht die gehaltenen: wer
+ * sich gerade verengt hat, soll auch das Menü der verengten Rolle sehen — sonst zeigt die
+ * Vorschau etwas anderes als das, wonach der Server den Request beurteilt, und beantwortet
+ * damit genau die Frage nicht, für die es sie gibt.
+ */
+export function visibleNavItems(
+	items: readonly NavItem[],
+	roles: readonly string[]
+): readonly NavItem[] {
+	return items.filter((item) => !item.roles || hasAnyRole(roles, item.roles));
+}

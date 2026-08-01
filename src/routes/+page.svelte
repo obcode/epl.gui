@@ -1,10 +1,15 @@
 <script lang="ts">
-	import { NAV_ITEMS } from '$lib/navigation';
+	import { NAV_ITEMS, visibleNavItems } from '$lib/navigation';
 	import type { PageData } from './$types';
 
 	let { data }: { data: PageData } = $props();
 
-	const planned = NAV_ITEMS.filter((item) => !item.href);
+	// Durch denselben Filter wie die Bereichsleiste. Sonst kündigt diese Liste einen Bereich
+	// an, den die Navigation direkt darüber verbirgt — was nicht nach einer Rollenregel
+	// aussieht, sondern nach einem Fehler.
+	const planned = $derived(
+		visibleNavItems(NAV_ITEMS, data.session?.effectiveRoles ?? []).filter((item) => !item.href)
+	);
 </script>
 
 <div class="flex flex-col gap-4">

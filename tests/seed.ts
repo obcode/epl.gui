@@ -18,7 +18,12 @@ const ROLES: Record<string, readonly string[]> = {
 	'prof.eins@example.org': ['LECTURER'],
 	'prof.zwei@example.org': ['LECTURER'],
 	// Vier plant — sie ist die Persona, an der eine Ausnahme sichtbar wird.
-	'prof.vier@example.org': ['LECTURER', 'PROGRAMME_LEAD']
+	'prof.vier@example.org': ['LECTURER', 'PROGRAMME_LEAD'],
+	// Sechs verwaltet. Zusätzlich LECTURER, weil die Rollenvorschau nur eine Auswahl aus den
+	// GEHALTENEN Rollen anbietet: „einmal ansehen, was eine Dozentin sieht" setzt voraus,
+	// dass man Dozent:in ist. Das ist keine Umständlichkeit, sondern der Grund, warum die
+	// Vorschau nichts hinzufügen kann.
+	'admin@example.org': ['LECTURER', 'ADMIN']
 };
 
 /** Verdoppelt einfache Anführungszeichen. Die Werte sind Konstanten aus diesem Repo, aber
