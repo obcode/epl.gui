@@ -1,6 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
-import { anchorFor, buildSchemaDoc } from './schemaDoc';
+import { anchorFor, buildSchemaDoc, describeBlocks, inlineSegments } from './schemaDoc';
 
 const SDL = `
 """Der Einstieg."""
@@ -131,5 +131,99 @@ describe('anchorFor', () => {
 	it('erzeugt eine Sprungmarke ohne Sonderzeichen', () => {
 		expect(anchorFor('PersonalAccessToken')).toBe('typ-PersonalAccessToken');
 		expect(anchorFor('Foo Bar!')).toBe('typ-FooBar');
+	});
+});
+
+describe('describeBlocks', () => {
+	it('macht aus harten Umbrüchen wieder Fließtext', () => {
+		// Der eigentliche Befund: die Beschreibungen sind im Schema auf knapp 100 Zeichen
+		// umbrochen, weil sie dort Quelltext sind. Auf einer Seite endete die Zeile damit
+		// mitten im Satz, an einer Stelle, die mit der Breite des Browsers nichts zu tun hat.
+		const blocks = describeBlocks(
+			'Nullable on purpose, and the null is the interesting part: through a\n' +
+				'Personal Access Token this field answers null rather than failing.'
+		);
+
+		expect(blocks).toHaveLength(1);
+		expect(blocks[0].text).toBe(
+			'Nullable on purpose, and the null is the interesting part: through a ' +
+				'Personal Access Token this field answers null rather than failing.'
+		);
+		expect(blocks[0].text).not.toContain('\n');
+	});
+
+	it('behält Absätze als Absätze', () => {
+		// Die Leerzeile ist eine Aussage: ohne sie wird aus einer strukturierten Erklärung
+		// eine Textwand, und das wäre die Überkorrektur zum ursprünglichen Fehler.
+		const blocks = describeBlocks('Erster Absatz.\nnoch erster.\n\nZweiter Absatz.');
+
+		expect(blocks.map((b) => b.text)).toEqual(['Erster Absatz. noch erster.', 'Zweiter Absatz.']);
+	});
+
+	it('lässt eingerückte Blöcke in Ruhe', () => {
+		// Heute gibt es im Schema keine. Ein Beispielaufruf in einer Beschreibung ist aber
+		// absehbar, und durch einen Reflow geschickt wäre er unlesbar.
+		const blocks = describeBlocks(
+			'Aufruf:\n\n    curl -H "Authorization: Bearer …" \\\n      https://…'
+		);
+
+		expect(blocks[0]).toEqual({ kind: 'text', text: 'Aufruf:' });
+		expect(blocks[1].kind).toBe('code');
+		expect(blocks[1].text).toContain('\n');
+	});
+
+	it('kommt mit fehlenden und leeren Beschreibungen zurecht', () => {
+		expect(describeBlocks(null)).toEqual([]);
+		expect(describeBlocks(undefined)).toEqual([]);
+		expect(describeBlocks('   \n\n  ')).toEqual([]);
+	});
+
+	it('räumt Windows-Zeilenenden und doppelte Leerzeichen auf', () => {
+		expect(describeBlocks('Eine Zeile\r\nund noch eine')[0].text).toBe('Eine Zeile und noch eine');
+	});
+
+	it('reflowt jede Beschreibung des echten Schemas ohne Rest-Umbruch', () => {
+		// Gegen die eingecheckte Datei: wenn im Backend jemand eine Beschreibung mit einer
+		// Struktur schreibt, die hier falsch behandelt wird, soll das auffallen.
+		const doc = buildSchemaDoc(readFileSync('schema.graphql', 'utf8'));
+
+		for (const type of [...doc.roots, ...doc.types]) {
+			for (const block of describeBlocks(type.description)) {
+				if (block.kind === 'text') expect(block.text).not.toContain('\n');
+			}
+			for (const field of type.fields) {
+				for (const block of describeBlocks(field.description)) {
+					if (block.kind === 'text') expect(block.text).not.toContain('\n');
+				}
+			}
+		}
+	});
+});
+
+describe('inlineSegments', () => {
+	it('zeichnet Backtick-Abschnitte als Code aus', () => {
+		// GraphQL-Beschreibungen sind Markdown, und das Schema benutzt das: `null`,
+		// `@interactiveOnly`, `/api/graphql`. Wörtlich angezeigt sehen die Backticks aus wie
+		// ein Formatierungsfehler.
+		expect(inlineSegments('antwortet `null` statt zu scheitern')).toEqual([
+			{ code: false, text: 'antwortet ' },
+			{ code: true, text: 'null' },
+			{ code: false, text: ' statt zu scheitern' }
+		]);
+	});
+
+	it('kommt mit einem einzelnen Backtick zurecht', () => {
+		// Ein unpaariger Backtick ist ein Tippfehler im Schema, kein Grund, den Rest des
+		// Absatzes zu verlieren.
+		expect(inlineSegments('ein ` einzelner')).toEqual([
+			{ code: false, text: 'ein ' },
+			{ code: true, text: ' einzelner' }
+		]);
+	});
+
+	it('gibt Text ohne Backticks unverändert zurück', () => {
+		expect(inlineSegments('ganz normaler Satz')).toEqual([
+			{ code: false, text: 'ganz normaler Satz' }
+		]);
 	});
 });
