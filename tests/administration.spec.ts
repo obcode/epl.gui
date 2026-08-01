@@ -132,7 +132,7 @@ test.describe('Rollenvorschau', () => {
 		await page.goto('/');
 
 		// Ohne Verengung: die Verwaltung ist erreichbar.
-		await expect(page.getByRole('button', { name: /Rolle/ })).toBeVisible();
+		await expect(page.getByRole('button', { name: 'Rolle', exact: true })).toBeVisible();
 
 		// Als Dozent:in ansehen. Der Cookie geht an den SSR-Prozess, der ihn als
 		// X-Tallox-Assume-Roles ans Backend weiterreicht — dieser ganze Weg ist der Grund,
@@ -151,6 +151,33 @@ test.describe('Rollenvorschau', () => {
 		await page.goto('/');
 		await page.getByRole('button', { name: 'Zurück zu meinen Rollen' }).first().click();
 		await expect(page.getByRole('status')).toHaveCount(0);
+	});
+
+	test('wird nur der Administration angeboten', async ({ asPersona }) => {
+		// Vier hält zwei Rollen (LECTURER + PROGRAMME_LEAD) und bekommt den Knopf trotzdem
+		// nicht: sie hat die Frage nicht, die er beantwortet, und was er tut — ihren
+		// Bedarfsbereich verschwinden lassen — sieht ohne die Frage nach einem Defekt aus.
+		const planner = await asPersona(PERSONAS.vier);
+		await planner.goto('/');
+		await expect(planner.getByRole('button', { name: 'Rolle', exact: true })).toHaveCount(0);
+
+		const admin = await asPersona(PERSONAS.sechs);
+		await admin.goto('/');
+		await expect(admin.getByRole('button', { name: 'Rolle', exact: true })).toBeVisible();
+	});
+
+	test('bleibt sichtbar, während man verengt ist', async ({ asPersona }) => {
+		// Die Bedingung hängt an den GEHALTENEN Rollen, nicht an den effektiven. Sonst wäre das
+		// Menü genau in dem Zustand weg, in dem man es zum Zurückkommen braucht — eine
+		// Administration, die sich auf LECTURER verengt hat, wirkt nicht mehr als ADMIN.
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto('/');
+		await page
+			.context()
+			.addCookies([{ name: 'tallox_assume', value: 'LECTURER', url: page.url() }]);
+		await page.reload();
+
+		await expect(page.getByRole('button', { name: 'Rolle', exact: true })).toBeVisible();
 	});
 
 	test('gibt niemandem eine Rolle, die er nicht hat', async ({ asPersona }) => {

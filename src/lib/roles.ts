@@ -58,6 +58,24 @@ export function sortRoles(roles: readonly string[]): string[] {
 	});
 }
 
+/**
+ * Wer die Rollenvorschau angeboten bekommt.
+ *
+ * Nur die Administration. Nicht aus Sicherheitsgründen — die Verengung kann per Konstruktion
+ * nichts hinzufügen, und wer den Cookie von Hand setzt, nimmt sich selbst Rechte weg. Es ist
+ * eine Frage der Oberfläche: eine Studiengangsleitung hat zwei Rollen und damit keinen Anlass,
+ * einen Knopf zu sehen, der ihren Bedarfsbereich verschwinden lässt. Sie hat die Frage nicht,
+ * die er beantwortet.
+ *
+ * Nimmt die **gehaltenen** Rollen entgegen, nicht die effektiven. Das ist der Punkt: eine
+ * Administration, die sich gerade auf LECTURER verengt hat, hält ADMIN weiterhin, wirkt aber
+ * nicht mehr als ADMIN — mit den effektiven Rollen wäre das Menü genau dann weg, wenn man es
+ * zum Zurückkommen braucht.
+ */
+export function mayPreviewRoles(grantedRoles: readonly string[]): boolean {
+	return grantedRoles.includes('ADMIN');
+}
+
 /** Hält diese Rollenmenge mindestens eine der genannten? */
 export function hasAnyRole(held: readonly string[], wanted: readonly Role[]): boolean {
 	return wanted.some((role) => held.includes(role));

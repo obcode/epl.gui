@@ -1,7 +1,7 @@
 <script lang="ts">
 	import { invalidateAll } from '$app/navigation';
 	import { ASSUME_COOKIE, ASSUME_COOKIE_MAX_AGE, serializeAssumedRoles } from '$lib/assumedRoles';
-	import { ROLE_LABELS, sortRoles } from '$lib/roles';
+	import { mayPreviewRoles, ROLE_LABELS, sortRoles } from '$lib/roles';
 
 	let {
 		grantedRoles,
@@ -36,7 +36,7 @@
 	}
 </script>
 
-{#if held.length > 1 || narrowed}
+{#if mayPreviewRoles(grantedRoles)}
 	<div class="dropdown dropdown-end">
 		<div
 			tabindex="0"
