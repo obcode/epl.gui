@@ -100,6 +100,15 @@ committed copy of the backend schema; codegen reads that file, so it works offli
   overridden in `app.css`, in one block per component, with the measured ratio in the comment.
   Expect the next daisyUI component to need the same treatment — check it, do not assume it.
 
+  **Such an override must exclude the marked state.** daisyUI pairs `.menu-active` /
+  `.tab-active` / `:active` with a matching foreground (`--menu-active-fg` on
+  `--menu-active-bg`), and that pair is built for contrast. Undoing only the foreground half
+  of it made the current page in the nav bar dark-on-dark on all seven light themes. Reuse
+  the exact `:not(…)` list daisyUI itself damps with. Note that axe cannot see this: daisyUI
+  paints a `background-image` on the active entry, so its `color-contrast` rule reports
+  `incomplete`, never `violation` — `tests/contrast.spec.ts` therefore measures that one
+  ratio itself.
+
   Two contrast rules, both measured across all twelve themes by `tests/contrast.spec.ts`:
 
   - **Muted text is `/80` or `/90`, never lower.** Below 80% opacity `base-content` drops

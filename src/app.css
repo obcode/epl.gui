@@ -38,10 +38,18 @@
  *
  * `tests/contrast.spec.ts` prüft das über alle zwölf Themes; die 80 % sind der Wert, ab dem
  * auch `winter` und `retro` bestehen. Siehe die Herleitung dort.
+ *
+ * **Der markierte Eintrag ist ausgenommen.** daisyUI legt unter `.menu-active` (und unter
+ * `:active`, solange die Maustaste unten ist) `--menu-active-bg` als Hintergrund — auf allen
+ * hellen Themes ein sehr dunkles `neutral` — und setzt dazu passend `--menu-active-fg`. Das
+ * Paar ist auf Kontrast ausgelegt; die Vordergrundfarbe hier pauschal auf `base-content`
+ * zurückzudrehen, brach genau diese Paarung und machte die aktuelle Seite in der
+ * Navigationsleiste dunkel auf dunkel. Dieselbe Ausnahme wie beim aktiven Tab weiter unten,
+ * und exakt dieselbe `:not(…)`-Liste, mit der daisyUI selbst dämpft.
  */
-.menu li > a,
-.menu li > button,
-.menu li > span {
+.menu li > a:not(.menu-active, :active),
+.menu li > button:not(.menu-active, :active),
+.menu li > span:not(.menu-active, :active) {
 	color: var(--color-base-content);
 	/* daisyUI dämpft zusätzlich über `opacity`. Ohne das Zurücksetzen multipliziert sich die
 	   Abschwächung mit der Farbe und der Kontrast bleibt zu niedrig. */
