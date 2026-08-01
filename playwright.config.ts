@@ -4,6 +4,9 @@ const CI = !!process.env.CI;
 
 export default defineConfig({
 	testDir: 'tests',
+	// Legt die Personen an, bevor der erste Test läuft. Seit das Backend Identität durchsetzt,
+	// ist eine Persona ohne Zeile in `person` niemand — und jede Seite antwortet mit 401.
+	globalSetup: './tests/global-setup.ts',
 	timeout: 60_000,
 	fullyParallel: true,
 	// /dev/shm ist im DevContainer nur 64 MB — mehr Worker lassen Chromium abstürzen. Auf einem

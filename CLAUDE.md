@@ -95,6 +95,11 @@ committed copy of the backend schema; codegen reads that file, so it works offli
   `rounded-lg border border-base-300 bg-base-100 p-4`. **Never hard-coded colours** like
   `text-green-700`.
 
+  daisyUI's own defaults are the recurring source of contrast findings: `.menu` entries,
+  `thead th` (3.49:1) and inactive `.tab` (2.66:1) are all damped below 4.5:1. They are
+  overridden in `app.css`, in one block per component, with the measured ratio in the comment.
+  Expect the next daisyUI component to need the same treatment — check it, do not assume it.
+
   Two contrast rules, both measured across all twelve themes by `tests/contrast.spec.ts`:
 
   - **Muted text is `/80` or `/90`, never lower.** Below 80% opacity `base-content` drops
@@ -125,7 +130,11 @@ These follow from the domain, not from taste. Full reasoning in the backend's
   _kein Windhundverfahren_ information completely without naming anyone. If the backend
   returns a count, it is already filtered — do not compute one client-side from a list.
 - **Do not surface raw backend error strings on write paths.** A verbatim uniqueness
-  violation reveals that someone else already registered.
+  violation reveals that someone else already registered. `src/lib/server/graphqlError.ts` is
+  where that rule lives: refusals are recognised by their `extensions.code` — the stable half
+  of the contract with the backend — and only codes on its allowlist keep their wording.
+  Everything else becomes a generic sentence. Never branch on the German text: that is the
+  half somebody rewords after a support question.
 - Role-based hiding (buttons, menu entries) is **cosmetic**. Write it for clarity, never rely
   on it.
 
@@ -140,6 +149,11 @@ No step, feature or fix is finished without tests.
   Chromium. Runs in its own workflow (`e2e.yml`), which checks out and builds the backend.
   In the DevContainer `/dev/shm` is 64 MB, so Chromium needs `--disable-dev-shm-usage` and
   capped workers.
+
+**E2E needs seeded people.** The backend resolves `X-Remote-User` against its `person` table,
+so a persona without a row is nobody and every page answers 401 — an authorization failure
+that looks like a broken app. `tests/global-setup.ts` pipes SQL generated from `PERSONAS`
+into `psql` before the first test; it needs `TALLOX_DB_URL` and does nothing without it.
 
 `tests/fixtures.ts` holds the cast — `PERSONAS.eins` owns the record, `zwei` must not see it —
 with the same names as the backend's `internal/testdata`, so a scenario reads the same in both

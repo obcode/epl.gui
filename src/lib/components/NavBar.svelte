@@ -2,7 +2,7 @@
 	import { page } from '$app/state';
 	import { resolve } from '$app/paths';
 	import ThemeSwitcher from './ThemeSwitcher.svelte';
-	import { isActive, NAV_ITEMS } from '$lib/navigation';
+	import { ACCOUNT_ITEMS, isActive, NAV_ITEMS } from '$lib/navigation';
 	import type { ThemeChoice } from '$lib/themes';
 
 	let {
@@ -70,12 +70,36 @@
 			     trägt das Menü unten die Identität — sie fehlt also nie ganz, sie steht nur
 			     woanders. -->
 			{#if remoteUser}
-				<span
-					class="text-base-content/90 hidden items-center gap-1.5 text-sm lg:flex"
-					title={remoteUser}
-				>
-					<span aria-hidden="true">👤</span>{remoteDisplayname ?? remoteUser}
-				</span>
+				<!-- Die Identität ist ab lg zugleich der Einstieg ins Konto. Ein eigener
+				     Menüpunkt in der Bereichsleiste wäre falsch: dort steht der Planungsprozess
+				     in seiner Reihenfolge, und Tokens sind kein Schritt darin. -->
+				<div class="dropdown dropdown-end hidden lg:block">
+					<div
+						tabindex="0"
+						role="button"
+						class="btn btn-ghost btn-sm gap-1.5 font-normal"
+						title={remoteUser}
+					>
+						<span aria-hidden="true">👤</span>{remoteDisplayname ?? remoteUser}
+					</div>
+					<!-- svelte-ignore a11y_no_noninteractive_tabindex -->
+					<ul
+						tabindex="0"
+						class="dropdown-content menu bg-base-100 rounded-box border-base-300 z-10 mt-2 w-56 border p-2 shadow-lg"
+					>
+						{#each ACCOUNT_ITEMS as item (item.label)}
+							<li>
+								<a
+									href={resolve(item.href!)}
+									title={item.hint}
+									class:menu-active={isActive(item, pathname)}
+								>
+									<span aria-hidden="true">{item.emoji}</span>{item.label}
+								</a>
+							</li>
+						{/each}
+					</ul>
+				</div>
 			{:else}
 				<!-- Badge statt `text-warning`: die semantischen daisyUI-Farben sind
 				     Hintergrund­farben. Als Textfarbe auf base-100 erreichen sie auf den hellen
@@ -122,6 +146,19 @@
 									<span aria-hidden="true">{item.emoji}</span>{item.label}
 								</span>
 							{/if}
+						</li>
+					{/each}
+
+					<!-- Unter lg trägt dieses Menü beides. Dieselben Einträge wie im Kontomenü
+					     oben: eine Navigation, die je nach Breite andere Ziele kennt, ist die
+					     Art von Unterschied, die niemand vermutet und jeder sucht. -->
+					<li></li>
+					<li class="menu-title">Konto</li>
+					{#each ACCOUNT_ITEMS as item (item.label)}
+						<li>
+							<a href={resolve(item.href!)} class:menu-active={isActive(item, pathname)}>
+								<span aria-hidden="true">{item.emoji}</span>{item.label}
+							</a>
 						</li>
 					{/each}
 				</ul>
