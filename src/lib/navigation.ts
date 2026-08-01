@@ -91,6 +91,13 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 		href: '/verwaltung/personen',
 		hint: 'Wer Tallox benutzen darf, und mit welchen Rollen',
 		roles: ['ADMIN']
+	},
+	{
+		emoji: '🔍',
+		label: 'Diagnose',
+		href: '/verwaltung/diagnose',
+		hint: 'Warum sieht jemand etwas nicht? Entscheidungen, keine Inhalte',
+		roles: ['ADMIN']
 	}
 ];
 

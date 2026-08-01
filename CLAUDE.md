@@ -166,6 +166,11 @@ These follow from the domain, not from taste. Full reasoning in the backend's
 - Role-based hiding (buttons, menu entries) is **cosmetic**. Write it for clarity, never rely
   on it. It is worth doing anyway: somebody who sees "Statistik" in the menu and gets a
   refusal on every click learns to ignore refusals.
+- **A field marked `@interactiveOnly` needs a page here, or it does not exist.** The API
+  console under `/api-doku` deliberately talks to the token door, so it answers `null` for
+  every such field — and the playground is off in production. `diagnoseAccess` was shipped
+  without a page and was therefore unreachable by anybody. Check the directive when adding a
+  backend field, before assuming the console covers it.
 - **Build the navigation from `session.effectiveRoles`, never from `me.roles`.** The two
   differ the moment somebody narrows their roles, and a menu built from the held ones shows
   the view of a person whose permissions the server is no longer applying — which answers

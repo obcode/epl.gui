@@ -215,3 +215,42 @@ test.describe('Barrierefreiheit', () => {
 		await checkA11y(page);
 	});
 });
+
+test.describe('Diagnose', () => {
+	test('beantwortet die Supportfrage mit Entscheidungen, nicht mit Inhalten', async ({
+		asPersona
+	}) => {
+		// Das Feld ist @interactiveOnly, und die API-Konsole unter /api-doku geht bewusst durch
+		// die Token-Tür. Ohne diese Seite gäbe es in Produktion also gar keinen Weg, es zu
+		// benutzen — genau das war beim ersten Anlauf der Fall.
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto(`/verwaltung/diagnose?mail=${encodeURIComponent(PERSONAS.eins.mail)}`);
+
+		await expect(page.getByRole('heading', { name: PERSONAS.eins.name })).toBeVisible();
+		await expect(page.getByText('policy.MayAdministerPeople')).toBeVisible();
+		// Eine Dozentin verwaltet nicht und liest keine fremden Wünsche — beide Antworten
+		// stehen da, mit Begründung.
+		await expect(page.getByText(/Nur Planung und Dekanat/)).toBeVisible();
+	});
+
+	test('sagt bei einer unbekannten Adresse genau das', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.sechs);
+		await page.goto('/verwaltung/diagnose?mail=gibtesnicht%40example.org');
+
+		await expect(page.getByText('Unbekannt')).toBeVisible();
+	});
+
+	test('ist für eine Dozentin nicht erreichbar', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.eins);
+		const response = await page.goto(
+			`/verwaltung/diagnose?mail=${encodeURIComponent(PERSONAS.zwei.mail)}`
+		);
+		expect(response?.status()).toBeGreaterThanOrEqual(400);
+	});
+
+	test('die Seite ist barrierefrei', async ({ asPersona, checkA11y }) => {
+		const page = await asPersona(PERSONAS.sechs);
+		await gotoRendered(page, `/verwaltung/diagnose?mail=${encodeURIComponent(PERSONAS.eins.mail)}`);
+		await checkA11y(page);
+	});
+});
