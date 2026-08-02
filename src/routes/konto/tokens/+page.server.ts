@@ -1,5 +1,7 @@
 import { fail } from '@sveltejs/kit';
 import { graphql } from '$lib/gql/__generated__';
+import type { ScopeArea } from '$lib/gql/__generated__/graphql';
+import { SELECTABLE_AREAS, areaFieldName, selectedScopes, type AreaChoice } from '$lib/scopes';
 import { backendRequest } from '$lib/server/backend';
 import { toRefusal } from '$lib/server/graphqlError';
 import type { Actions, PageServerLoad } from './$types';
@@ -13,13 +15,22 @@ const MyTokens = graphql(`
 			expiresAt
 			lastUsedAt
 			revokedAt
+			scopes
 		}
 	}
 `);
 
 const CreateToken = graphql(`
-	mutation CreatePersonalAccessToken($description: String!, $expiresInDays: Int) {
-		createPersonalAccessToken(description: $description, expiresInDays: $expiresInDays) {
+	mutation CreatePersonalAccessToken(
+		$description: String!
+		$expiresInDays: Int
+		$scopes: [ScopeGrantInput!]
+	) {
+		createPersonalAccessToken(
+			description: $description
+			expiresInDays: $expiresInDays
+			scopes: $scopes
+		) {
 			secret
 			token {
 				id
@@ -28,6 +39,7 @@ const CreateToken = graphql(`
 				expiresAt
 				lastUsedAt
 				revokedAt
+				scopes
 			}
 		}
 	}
@@ -70,8 +82,24 @@ export const actions: Actions = {
 			});
 		}
 
+		// "Nothing ticked" and "unrestricted" are the same value to the backend — an empty list
+		// means the token may do everything its owner's roles allow. In a form that is a trap:
+		// a page showing "kein Zugriff" beside every area would mint a token with no limits at
+		// all. So the choice is explicit, and asking to restrict without naming an area is a
+		// mistake rather than the most permissive outcome.
+		const scopes =
+			String(form.get('restrict') ?? 'no') === 'yes' ? selectedScopes(readAreaChoices(form)) : [];
+
+		if (String(form.get('restrict') ?? 'no') === 'yes' && scopes.length === 0) {
+			return fail(400, {
+				code: 'SCOPE_NONE_SELECTED',
+				message: 'Bitte mindestens einen Bereich auswählen — oder das Token unbeschränkt lassen.',
+				description
+			});
+		}
+
 		try {
-			const data = await backendRequest(CreateToken, { description, expiresInDays });
+			const data = await backendRequest(CreateToken, { description, expiresInDays, scopes });
 			// The plaintext token comes back here exactly once and is stored nowhere — not in the
 			// session, not in a cookie, not in the log. Anybody who loses it creates a new one
 			// and revokes this one.
@@ -94,3 +122,19 @@ export const actions: Actions = {
 		}
 	}
 };
+
+/**
+ * Reads one radio group per area out of the form.
+ *
+ * Only the areas the dialogue offers. A value arriving for any other one is ignored rather
+ * than refused: it can only come from a hand-written POST, and the backend would refuse
+ * anything it does not know anyway — this is a form parser, not a second gate.
+ */
+function readAreaChoices(form: FormData): Partial<Record<ScopeArea, AreaChoice>> {
+	const choices: Partial<Record<ScopeArea, AreaChoice>> = {};
+	for (const area of SELECTABLE_AREAS) {
+		const value = String(form.get(areaFieldName(area)) ?? 'none');
+		if (value === 'READ' || value === 'WRITE') choices[area] = value;
+	}
+	return choices;
+}

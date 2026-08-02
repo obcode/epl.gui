@@ -1,6 +1,15 @@
 <script lang="ts">
 	import { enhance } from '$app/forms';
 	import { resolve } from '$app/paths';
+	import {
+		AREA_HINTS,
+		AREA_LABELS,
+		CHOICE_LABELS,
+		SELECTABLE_AREAS,
+		UNREACHABLE_AREAS,
+		areaFieldName,
+		describeScopes
+	} from '$lib/scopes';
 	import { expiresIn, formatMoment, STATUS_BADGE, STATUS_LABEL, tokenStatus } from '$lib/tokens';
 	import type { ActionData, PageData } from './$types';
 
@@ -77,7 +86,18 @@
 			<span aria-hidden="true">➕</span> Neues Token
 		</h2>
 
-		<form method="POST" action="?/create" use:enhance class="flex flex-col gap-3 sm:flex-row">
+		<!--
+			The scope controls sit in a fieldset outside the form element, so the description and
+			the lifetime keep their one-line layout. `form="create-token"` is what puts them back
+			into the same submission — an HTML attribute, so it works without JavaScript too.
+		-->
+		<form
+			id="create-token"
+			method="POST"
+			action="?/create"
+			use:enhance
+			class="flex flex-col gap-3 sm:flex-row"
+		>
 			<label class="flex flex-1 flex-col gap-1">
 				<span class="text-base-content/90 text-sm">Wofür?</span>
 				<input
@@ -104,6 +124,78 @@
 
 			<button class="btn btn-primary self-end">Anlegen</button>
 		</form>
+
+		<fieldset class="border-base-300 mt-4 rounded-lg border p-3">
+			<legend class="text-base-content/90 px-1 text-sm font-medium">Reichweite</legend>
+
+			<!--
+				The explicit choice exists because "nothing ticked" and "unrestricted" are the same
+				value to the backend. Without this radio the form would show "kein Zugriff" beside
+				every area and mint a token with no limits at all.
+			-->
+			<label class="flex items-start gap-2 py-1 text-sm">
+				<input
+					form="create-token"
+					type="radio"
+					name="restrict"
+					value="no"
+					checked
+					class="radio radio-sm mt-0.5"
+				/>
+				<span>
+					<span class="font-medium">Unbeschränkt</span>
+					<span class="text-base-content/80">
+						— alles, was Deine Rollen erlauben. Ein Token kann nie mehr als Du.
+					</span>
+				</span>
+			</label>
+
+			<label class="flex items-start gap-2 py-1 text-sm">
+				<input
+					form="create-token"
+					type="radio"
+					name="restrict"
+					value="yes"
+					class="radio radio-sm mt-0.5"
+				/>
+				<span>
+					<span class="font-medium">Auf einzelne Bereiche einschränken</span>
+					<span class="text-base-content/80">— dann unten auswählen.</span>
+				</span>
+			</label>
+
+			<div class="mt-3 grid grid-cols-1 gap-3 sm:grid-cols-2">
+				{#each SELECTABLE_AREAS as area (area)}
+					<div class="border-base-300 rounded-lg border p-3">
+						<p class="text-sm font-medium">{AREA_LABELS[area]}</p>
+						<p class="text-base-content/80 mb-2 text-xs">{AREA_HINTS[area]}</p>
+
+						<div class="flex flex-wrap gap-x-4 gap-y-1">
+							{#each ['none', 'READ', 'WRITE'] as const as choice (choice)}
+								<label class="flex items-center gap-1.5 text-sm">
+									<input
+										form="create-token"
+										type="radio"
+										name={areaFieldName(area)}
+										value={choice}
+										checked={choice === 'none'}
+										class="radio radio-xs"
+									/>
+									{CHOICE_LABELS[choice]}
+								</label>
+							{/each}
+						</div>
+					</div>
+				{/each}
+			</div>
+
+			<p class="text-base-content/80 mt-3 text-xs">
+				Nicht einschränkbar:
+				{#each Object.entries(UNREACHABLE_AREAS) as [area, reason], index (area)}{index > 0
+						? ' · '
+						: ''}{AREA_LABELS[area as keyof typeof AREA_LABELS]} ({reason}){/each}
+			</p>
+		</fieldset>
 	</div>
 
 	<div class="border-base-300 bg-base-100 rounded-lg border p-4">
@@ -121,6 +213,7 @@
 					<thead>
 						<tr>
 							<th>Beschreibung</th>
+							<th>Reichweite</th>
 							<th>Status</th>
 							<th>Angelegt</th>
 							<th>Läuft ab</th>
@@ -136,6 +229,7 @@
 									<div>{token.description}</div>
 									<div class="text-base-content/80 font-mono text-xs">{token.id}</div>
 								</td>
+								<td class="text-base-content/90">{describeScopes(token.scopes)}</td>
 								<td>
 									<span class="badge badge-sm {STATUS_BADGE[status]}">{STATUS_LABEL[status]}</span>
 								</td>

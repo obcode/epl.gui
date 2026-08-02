@@ -100,3 +100,98 @@ test.describe('Personal Access Tokens', () => {
 		await checkA11y(page);
 	});
 });
+
+test.describe('token scopes', () => {
+	const endpoint = () =>
+		`${process.env.TALLOX_SERVER?.replace('/query', '') ?? 'http://localhost:8080'}/api/graphql`;
+
+	test('a token restricted to the planning is refused everywhere else', async ({ asPersona }) => {
+		// The whole scope model along the path a colleague actually walks: tick a box here, spend
+		// the result at the token door. Every other assertion about scopes is on one half or the
+		// other — this is the one where "what I ticked" and "what I got" could disagree.
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/konto/tokens');
+
+		const description = `Scoped ${Date.now()}`;
+		await page.getByLabel('Wofür?').fill(description);
+		await page.getByRole('radio', { name: /Auf einzelne Bereiche einschränken/ }).check();
+
+		// The radio group of the planning area, not a global "lesen" — the form has one per area.
+		const planning = page
+			.locator('div')
+			.filter({ hasText: /^Planung/ })
+			.last();
+		await planning.getByRole('radio', { name: 'lesen', exact: true }).check();
+
+		await page.getByRole('button', { name: 'Anlegen' }).click();
+
+		const secret = await page.getByLabel('Neues Token').inputValue();
+
+		const semesters = await page.request.post(endpoint(), {
+			headers: { Authorization: `Bearer ${secret}` },
+			data: { query: '{ semesters { code } }' }
+		});
+		expect(await semesters.json()).not.toHaveProperty('errors');
+
+		// The owner holds LECTURER, so `me` would answer for an unscoped token of hers. It is the
+		// scope alone that refuses it here.
+		const me = await page.request.post(endpoint(), {
+			headers: { Authorization: `Bearer ${secret}` },
+			data: { query: '{ me { mail } }' }
+		});
+		const refused = await me.json();
+		expect(refused.errors?.[0]?.extensions?.code).toBe('INSUFFICIENT_SCOPE');
+
+		// And buildInfo still answers, because a token whose diagnosis field is scoped off cannot
+		// tell a broken credential from a broken route.
+		const version = await page.request.post(endpoint(), {
+			headers: { Authorization: `Bearer ${secret}` },
+			data: { query: '{ buildInfo { version } }' }
+		});
+		expect(await version.json()).not.toHaveProperty('errors');
+
+		// And the list says what the token can reach, so the owner can check without spending it.
+		await gotoRendered(page, '/konto/tokens');
+		const row = page.getByRole('row').filter({ hasText: description });
+		await expect(row).toContainText('Planung (lesen)');
+	});
+
+	test('leaving it unrestricted is the default and says so', async ({ asPersona }) => {
+		const page = await asPersona(PERSONAS.zwei);
+		await gotoRendered(page, '/konto/tokens');
+
+		const description = `Unscoped ${Date.now()}`;
+		await page.getByLabel('Wofür?').fill(description);
+		await page.getByRole('button', { name: 'Anlegen' }).click();
+
+		const secret = await page.getByLabel('Neues Token').inputValue();
+
+		const me = await page.request.post(endpoint(), {
+			headers: { Authorization: `Bearer ${secret}` },
+			data: { query: '{ me { mail } }' }
+		});
+		expect(await me.json()).toMatchObject({ data: { me: { mail: PERSONAS.zwei.mail } } });
+
+		await gotoRendered(page, '/konto/tokens');
+		await expect(page.getByRole('row').filter({ hasText: description })).toContainText(
+			'unbeschränkt'
+		);
+	});
+
+	test('asking to restrict without choosing an area is refused, not silently unrestricted', async ({
+		asPersona
+	}) => {
+		// The trap this dialogue exists to avoid. An empty selection means "no limits" to the
+		// backend, so a page that showed "kein Zugriff" everywhere and submitted it would mint
+		// the most permissive token of all.
+		const page = await asPersona(PERSONAS.eins);
+		await gotoRendered(page, '/konto/tokens');
+
+		await page.getByLabel('Wofür?').fill(`Empty ${Date.now()}`);
+		await page.getByRole('radio', { name: /Auf einzelne Bereiche einschränken/ }).check();
+		await page.getByRole('button', { name: 'Anlegen' }).click();
+
+		await expect(page.getByText(/mindestens einen Bereich/)).toBeVisible();
+		await expect(page.getByLabel('Neues Token')).toHaveCount(0);
+	});
+});
