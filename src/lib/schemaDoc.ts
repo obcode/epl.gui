@@ -10,12 +10,18 @@ import type { GraphQLNamedType } from 'graphql';
  * `pnpm codegen` auch benutzt: die Referenz kann gar nicht von den typisierten Dokumenten
  * abweichen.
  *
- * **Was die Referenz nicht zeigen kann:** welche Felder `@interactiveOnly` sind. Die
- * GraphQL-Introspection liefert die *Definition* einer Direktive, aber nicht, wo sie
- * angewandt wurde — `schema.graphql` entsteht aus Introspection und weiß es damit selbst
- * nicht. Im Backend steht die Einschränkung deshalb in der Feldbeschreibung, und die kommt
- * hier mit. Die Konsole auf der Doku-Seite ist die zweite Antwort: wer es genau wissen will,
- * fragt das Feld mit einem Token ab und sieht `null`.
+ * **Was die Referenz nicht zeigen kann:** wo eine Direktive angewandt wurde. Die
+ * GraphQL-Introspection liefert die *Definition* einer Direktive, aber nicht ihre
+ * Verwendungsstellen — `schema.graphql` entsteht aus Introspection und weiß es damit selbst
+ * nicht. Das betrifft beide Direktiven des Backends, und beide behelfen sich mit Prosa, denn
+ * Beschreibungen kommen hier mit:
+ *
+ * - `@interactiveOnly` steht in der Beschreibung des jeweiligen Feldes.
+ * - `@scope` steht umgekehrt bei der Fläche: jeder `ScopeArea`-Wert zählt seine Felder auf.
+ *   Im Backend hält `TestScopeAreasListTheirFields` diese Listen aktuell.
+ *
+ * Die Konsole auf der Doku-Seite ist die zweite Antwort: wer es genau wissen will, fragt das
+ * Feld mit einem Token ab und sieht `null` bzw. `INSUFFICIENT_SCOPE`.
  */
 
 export type FieldArg = {

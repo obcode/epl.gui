@@ -31,6 +31,35 @@ Indicates exactly one field must be supplied and this field must not be `null`.
 """
 directive @oneOf on INPUT_OBJECT
 
+"""
+Which Personal Access Token scope a field requires.
+
+Every field on `Query` and `Mutation` carries one. A token whose scope list does not cover
+every root field of your operation is refused with the error code `INSUFFICIENT_SCOPE`, before
+anything runs.
+
+A fetched schema will not show you the annotations — introspection reports that this directive
+exists, but not where it is applied. Each `ScopeArea` below therefore lists the fields that
+belong to it.
+
+Two things worth knowing before you mint a token:
+
+- **`WRITE` includes `READ` in the same area**, and nowhere else. There is no scope that covers
+  all areas; a token that needs several lists several.
+- **A token with an empty scope list is not restricted** — it may do everything its owner's
+  roles allow. Scopes only ever narrow, exactly like the role preview does.
+
+A scope never widens anything. Your roles decide what you may see; the scope decides how much
+of that this particular token may reach.
+"""
+directive @scope(
+  """Which part of the API the field belongs to."""
+  area: ScopeArea!
+
+  """Whether reaching the field is a read or a change."""
+  verb: ScopeVerb!
+) on FIELD_DEFINITION
+
 """Exposes a URL that specifies the behavior of this scalar."""
 directive @specifiedBy(
   """The URL that specifies the behavior of this scalar."""
@@ -208,10 +237,12 @@ type PersonalAccessToken {
   description: String!
 
   """
-  The `area:verb` grants this token carries.
+  The `area:verb` grants this token carries — see the `@scope` directive.
   
-  Currently informational: every token can do what its owner can. Fine-grained scopes are
-  planned, and tokens created now will keep working when they arrive.
+  **An empty list means unrestricted**: the token may do everything its owner's roles allow.
+  Scopes only ever narrow. There is currently no way to choose them when creating a token, so
+  in practice this list is empty; the enforcement is live, and tokens created now keep working
+  when the choice arrives.
   """
   scopes: [String!]!
   createdAt: Time!
@@ -382,6 +413,59 @@ type RoleGrant {
   permanent one rather than as a date nobody rereads.
   """
   expiresAt: Time
+}
+
+"""
+The part of the API a scope refers to.
+
+Deliberately coarse: these are meant to be ticked in a dialog by somebody whose mind is on the
+evaluation script they are about to write.
+"""
+enum ScopeArea {
+  """
+  What answers without an identity. Useful for checking that a route and a credential work
+  when everything else is refused: if this answers and nothing else does, the problem is the
+  token and not the connection.
+  
+  Fields: `buildInfo`.
+  """
+  PUBLIC
+
+  """
+  Your own identity and session: who you are, which roles you hold, and which of them you are
+  being judged by.
+  
+  Fields: `me`, `session`.
+  """
+  PROFILE
+
+  """
+  Personal Access Token management. Not reachable through a token at all — those fields are
+  `@interactiveOnly`, so that a leaked token cannot mint its successors.
+  
+  Fields: `myTokens`, `createPersonalAccessToken`, `revokePersonalAccessToken`.
+  """
+  TOKENS
+
+  """
+  User and role administration. Also `@interactiveOnly`, for the same reason.
+  
+  Fields: `people`, `person`, `roleGrants`, `diagnoseAccess`, `createPerson`, `renamePerson`,
+  `setPersonRoles`, `setPersonActive`.
+  """
+  ADMIN
+}
+
+"""Whether a scope permits reading or changing."""
+enum ScopeVerb {
+  """Queries."""
+  READ
+
+  """
+  Mutations — and queries in the same area, because a token that may change
+  something and not look at it is not a capability anybody wants.
+  """
+  WRITE
 }
 
 """
