@@ -1,11 +1,11 @@
 @import 'tailwindcss';
 
 /*
- * Kuratierte Themeliste, MUSS mit THEMES in src/lib/themes.ts übereinstimmen. Nicht `all`:
- * daisyUI legt sonst über 30 Themes ins Bundle, von denen nie eines ausgewählt wird.
+ * The curated theme list. MUST match THEMES in src/lib/themes.ts. Not `all`: daisyUI would
+ * otherwise put more than 30 themes into the bundle, none of which is ever selected.
  *
- * `--default` und `--prefersdark` sind das, was die Auswahl „System" überhaupt möglich macht:
- * sie greifen genau dann, wenn am <html>-Tag kein data-theme steht.
+ * `--default` and `--prefersdark` are what makes the "System" choice possible at all: they
+ * apply exactly when there is no data-theme on the <html> tag.
  */
 @plugin "daisyui" {
 	themes:
@@ -26,33 +26,31 @@
 @plugin "@tailwindcss/typography";
 
 /*
- * Menü-Kontrast.
+ * Menu contrast.
  *
- * daisyUI dämpft Einträge und Überschriften in `.menu` per Voreinstellung sehr stark ab: auf
- * `nord` erreichen Einträge 2.22:1 und `.menu-title` sogar 1.34:1 gegen den Menühintergrund.
- * WCAG 1.4.3 verlangt 4.5:1 — und die Hochschule ist eine öffentliche Stelle, für die BayEGovG
- * und BITV 2.0 gelten.
+ * By default daisyUI damps entries and headings in `.menu` very heavily: on `nord` entries
+ * reach 2.22:1 and `.menu-title` even 1.34:1 against the menu background. WCAG 1.4.3 requires
+ * 4.5:1 — and the university is a public body, to which BayEGovG and BITV 2.0 apply.
  *
- * Betrifft beide Menüs der Navigationsleiste (Bereiche und Themewahl), also genau die Stellen,
- * über die unterhalb von 1024px die gesamte Navigation läuft.
+ * This affects both menus of the navigation bar (areas and theme choice), so exactly the places
+ * the entire navigation runs through below 1024px.
  *
- * `tests/contrast.spec.ts` prüft das über alle zwölf Themes; die 80 % sind der Wert, ab dem
- * auch `winter` und `retro` bestehen. Siehe die Herleitung dort.
+ * `tests/contrast.spec.ts` checks it across all twelve themes; the 80 % is the value at which
+ * `winter` and `retro` pass too. See the derivation there.
  *
- * **Der markierte Eintrag ist ausgenommen.** daisyUI legt unter `.menu-active` (und unter
- * `:active`, solange die Maustaste unten ist) `--menu-active-bg` als Hintergrund — auf allen
- * hellen Themes ein sehr dunkles `neutral` — und setzt dazu passend `--menu-active-fg`. Das
- * Paar ist auf Kontrast ausgelegt; die Vordergrundfarbe hier pauschal auf `base-content`
- * zurückzudrehen, brach genau diese Paarung und machte die aktuelle Seite in der
- * Navigationsleiste dunkel auf dunkel. Dieselbe Ausnahme wie beim aktiven Tab weiter unten,
- * und exakt dieselbe `:not(…)`-Liste, mit der daisyUI selbst dämpft.
+ * **The marked entry is excluded.** Under `.menu-active` (and under `:active`, while the mouse
+ * button is down) daisyUI puts `--menu-active-bg` in as the background — a very dark `neutral`
+ * on all light themes — and sets a matching `--menu-active-fg`. That pair is built for
+ * contrast; turning the foreground colour flatly back to `base-content` here broke exactly that
+ * pairing and made the current page in the navigation bar dark on dark. The same exception as
+ * for the active tab below, and exactly the same `:not(…)` list daisyUI itself damps with.
  */
 .menu li > a:not(.menu-active, :active),
 .menu li > button:not(.menu-active, :active),
 .menu li > span:not(.menu-active, :active) {
 	color: var(--color-base-content);
-	/* daisyUI dämpft zusätzlich über `opacity`. Ohne das Zurücksetzen multipliziert sich die
-	   Abschwächung mit der Farbe und der Kontrast bleibt zu niedrig. */
+	/* daisyUI additionally damps via `opacity`. Without resetting it the attenuation multiplies
+	   with the colour and the contrast stays too low. */
 	opacity: 1;
 }
 
@@ -62,20 +60,20 @@
 }
 
 /*
- * Tabellenkopf- und Tab-Kontrast.
+ * Table-head and tab contrast.
  *
- * Dieselbe Ursache wie beim Menü oben, an zwei weiteren Stellen: daisyUI dämpft `thead th` auf
- * 3.49:1 und den inaktiven `.tab` auf 2.66:1 gegen den jeweiligen Hintergrund — beides unter
- * den 4.5:1 aus WCAG 1.4.3.
+ * The same cause as the menu above, in two more places: daisyUI damps `thead th` to 3.49:1 and
+ * the inactive `.tab` to 2.66:1 against their respective backgrounds — both below the 4.5:1 of
+ * WCAG 1.4.3.
  *
- * Es sind die zwei Bauteile, an denen Information hängt, die man nicht raten kann: die
- * Spaltenüberschrift sagt, was in der Spalte steht, und der inaktive Tab ist die einzige
- * Anzeige dafür, dass es weitere Beispiele gibt. Gefunden von tests/tokens.spec.ts und
- * tests/apiDocs.spec.ts, überwacht über alle zwölf Themes von tests/contrast.spec.ts.
+ * These are the two components carrying information that cannot be guessed: the column heading
+ * says what is in the column, and the inactive tab is the only indication that there are further
+ * examples. Found by tests/tokens.spec.ts and tests/apiDocs.spec.ts, watched across all twelve
+ * themes by tests/contrast.spec.ts.
  *
- * 80 % statt voller Deckkraft: der Kopf soll sich weiter von den Datenzeilen abheben — nur
- * eben oberhalb der Schwelle statt darunter. Unter 80 % fällt `base-content` auf `winter` und
- * `retro` wieder durch.
+ * 80 % rather than full opacity: the head should still stand apart from the data rows — just
+ * above the threshold instead of below it. Below 80 % `base-content` fails again on `winter` and
+ * `retro`.
  */
 .table thead th,
 .table tfoot th {

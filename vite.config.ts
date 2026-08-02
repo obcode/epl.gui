@@ -4,10 +4,10 @@ import { execSync } from 'node:child_process';
 import { readFileSync } from 'node:fs';
 import { defineConfig } from 'vite';
 
-// Version zur Bauzeit einbacken, dreistufig:
-//   1. APP_VERSION (Docker-Build-Arg aus dem semantic-release-Tag)
-//   2. git describe (lokale Entwicklung im Repo)
-//   3. package.json (Notnagel; dort steht bewusst ein Platzhalter)
+// Bake the version in at build time, in three steps:
+//   1. APP_VERSION (Docker build arg from the semantic-release tag)
+//   2. git describe (local development inside the repository)
+//   3. package.json (last resort; it deliberately holds a placeholder)
 function appVersion(): string {
 	if (process.env.APP_VERSION) return process.env.APP_VERSION;
 	try {
@@ -31,6 +31,6 @@ export default defineConfig({
 		__BUILD_TIME__: JSON.stringify(new Date().toISOString())
 	}
 
-	// Die Vitest-Konfiguration steht in vitest.config.ts, nicht hier: `test` gehört nicht in
-	// Vites UserConfig und svelte-check meldet es zu Recht als Typfehler.
+	// The vitest configuration lives in vitest.config.ts, not here: `test` does not belong in
+	// Vite's UserConfig, and svelte-check rightly reports it as a type error.
 });

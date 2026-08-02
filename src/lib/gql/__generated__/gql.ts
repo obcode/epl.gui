@@ -19,6 +19,10 @@ type Documents = {
     "\n\tquery MyTokens {\n\t\tmyTokens {\n\t\t\tid\n\t\t\tdescription\n\t\t\tcreatedAt\n\t\t\texpiresAt\n\t\t\tlastUsedAt\n\t\t\trevokedAt\n\t\t}\n\t}\n": typeof types.MyTokensDocument,
     "\n\tmutation CreatePersonalAccessToken($description: String!, $expiresInDays: Int) {\n\t\tcreatePersonalAccessToken(description: $description, expiresInDays: $expiresInDays) {\n\t\t\tsecret\n\t\t\ttoken {\n\t\t\t\tid\n\t\t\t\tdescription\n\t\t\t\tcreatedAt\n\t\t\t\texpiresAt\n\t\t\t\tlastUsedAt\n\t\t\t\trevokedAt\n\t\t\t}\n\t\t}\n\t}\n": typeof types.CreatePersonalAccessTokenDocument,
     "\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": typeof types.RevokePersonalAccessTokenDocument,
+    "\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tid\n\t\t\tcode\n\t\t\tphase\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t}\n\t}\n": typeof types.SemestersDocument,
+    "\n\tmutation CreateSemester($code: String!) {\n\t\tcreateSemester(code: $code) {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n": typeof types.CreateSemesterDocument,
+    "\n\tmutation AdvanceSemesterPhase($id: ID!, $to: Phase!) {\n\t\tadvanceSemesterPhase(id: $id, to: $to) {\n\t\t\tid\n\t\t\tphase\n\t\t}\n\t}\n": typeof types.AdvanceSemesterPhaseDocument,
+    "\n\tmutation PublishWishes($id: ID!) {\n\t\tpublishWishes(id: $id) {\n\t\t\tid\n\t\t\twishesPublishedAt\n\t\t}\n\t}\n": typeof types.PublishWishesDocument,
     "\n\tquery DiagnoseAccess($mail: String!) {\n\t\tdiagnoseAccess(mail: $mail) {\n\t\t\tactive\n\t\t\tperson {\n\t\t\t\tid\n\t\t\t\tmail\n\t\t\t\tname\n\t\t\t\troles\n\t\t\t}\n\t\t\tgrants {\n\t\t\t\trole\n\t\t\t\tgrantedAt\n\t\t\t\texpiresAt\n\t\t\t\tgrantedBy {\n\t\t\t\t\tmail\n\t\t\t\t\tname\n\t\t\t\t}\n\t\t\t}\n\t\t\tdecisions {\n\t\t\t\trule\n\t\t\t\tallowed\n\t\t\t\treason\n\t\t\t}\n\t\t}\n\t}\n": typeof types.DiagnoseAccessDocument,
     "\n\tquery People($search: String, $includeInactive: Boolean) {\n\t\tpeople(search: $search, includeInactive: $includeInactive) {\n\t\t\tid\n\t\t\tmail\n\t\t\tname\n\t\t\troles\n\t\t}\n\t}\n": typeof types.PeopleDocument,
     "\n\tmutation CreatePerson($mail: String!, $name: String) {\n\t\tcreatePerson(mail: $mail, name: $name) {\n\t\t\tid\n\t\t\tmail\n\t\t}\n\t}\n": typeof types.CreatePersonDocument,
@@ -31,6 +35,10 @@ const documents: Documents = {
     "\n\tquery MyTokens {\n\t\tmyTokens {\n\t\t\tid\n\t\t\tdescription\n\t\t\tcreatedAt\n\t\t\texpiresAt\n\t\t\tlastUsedAt\n\t\t\trevokedAt\n\t\t}\n\t}\n": types.MyTokensDocument,
     "\n\tmutation CreatePersonalAccessToken($description: String!, $expiresInDays: Int) {\n\t\tcreatePersonalAccessToken(description: $description, expiresInDays: $expiresInDays) {\n\t\t\tsecret\n\t\t\ttoken {\n\t\t\t\tid\n\t\t\t\tdescription\n\t\t\t\tcreatedAt\n\t\t\t\texpiresAt\n\t\t\t\tlastUsedAt\n\t\t\t\trevokedAt\n\t\t\t}\n\t\t}\n\t}\n": types.CreatePersonalAccessTokenDocument,
     "\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n": types.RevokePersonalAccessTokenDocument,
+    "\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tid\n\t\t\tcode\n\t\t\tphase\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t}\n\t}\n": types.SemestersDocument,
+    "\n\tmutation CreateSemester($code: String!) {\n\t\tcreateSemester(code: $code) {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n": types.CreateSemesterDocument,
+    "\n\tmutation AdvanceSemesterPhase($id: ID!, $to: Phase!) {\n\t\tadvanceSemesterPhase(id: $id, to: $to) {\n\t\t\tid\n\t\t\tphase\n\t\t}\n\t}\n": types.AdvanceSemesterPhaseDocument,
+    "\n\tmutation PublishWishes($id: ID!) {\n\t\tpublishWishes(id: $id) {\n\t\t\tid\n\t\t\twishesPublishedAt\n\t\t}\n\t}\n": types.PublishWishesDocument,
     "\n\tquery DiagnoseAccess($mail: String!) {\n\t\tdiagnoseAccess(mail: $mail) {\n\t\t\tactive\n\t\t\tperson {\n\t\t\t\tid\n\t\t\t\tmail\n\t\t\t\tname\n\t\t\t\troles\n\t\t\t}\n\t\t\tgrants {\n\t\t\t\trole\n\t\t\t\tgrantedAt\n\t\t\t\texpiresAt\n\t\t\t\tgrantedBy {\n\t\t\t\t\tmail\n\t\t\t\t\tname\n\t\t\t\t}\n\t\t\t}\n\t\t\tdecisions {\n\t\t\t\trule\n\t\t\t\tallowed\n\t\t\t\treason\n\t\t\t}\n\t\t}\n\t}\n": types.DiagnoseAccessDocument,
     "\n\tquery People($search: String, $includeInactive: Boolean) {\n\t\tpeople(search: $search, includeInactive: $includeInactive) {\n\t\t\tid\n\t\t\tmail\n\t\t\tname\n\t\t\troles\n\t\t}\n\t}\n": types.PeopleDocument,
     "\n\tmutation CreatePerson($mail: String!, $name: String) {\n\t\tcreatePerson(mail: $mail, name: $name) {\n\t\t\tid\n\t\t\tmail\n\t\t}\n\t}\n": types.CreatePersonDocument,
@@ -72,6 +80,22 @@ export function graphql(source: "\n\tmutation CreatePersonalAccessToken($descrip
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */
 export function graphql(source: "\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation RevokePersonalAccessToken($id: ID!) {\n\t\trevokePersonalAccessToken(id: $id) {\n\t\t\tid\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tid\n\t\t\tcode\n\t\t\tphase\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t}\n\t}\n"): (typeof documents)["\n\tquery Semesters {\n\t\tsemesters {\n\t\t\tid\n\t\t\tcode\n\t\t\tphase\n\t\t\treachablePhases\n\t\t\twishesPublishedAt\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation CreateSemester($code: String!) {\n\t\tcreateSemester(code: $code) {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation CreateSemester($code: String!) {\n\t\tcreateSemester(code: $code) {\n\t\t\tid\n\t\t\tcode\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation AdvanceSemesterPhase($id: ID!, $to: Phase!) {\n\t\tadvanceSemesterPhase(id: $id, to: $to) {\n\t\t\tid\n\t\t\tphase\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation AdvanceSemesterPhase($id: ID!, $to: Phase!) {\n\t\tadvanceSemesterPhase(id: $id, to: $to) {\n\t\t\tid\n\t\t\tphase\n\t\t}\n\t}\n"];
+/**
+ * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
+ */
+export function graphql(source: "\n\tmutation PublishWishes($id: ID!) {\n\t\tpublishWishes(id: $id) {\n\t\t\tid\n\t\t\twishesPublishedAt\n\t\t}\n\t}\n"): (typeof documents)["\n\tmutation PublishWishes($id: ID!) {\n\t\tpublishWishes(id: $id) {\n\t\t\tid\n\t\t\twishesPublishedAt\n\t\t}\n\t}\n"];
 /**
  * The graphql function is used to parse GraphQL queries into a document that can be used by GraphQL clients.
  */

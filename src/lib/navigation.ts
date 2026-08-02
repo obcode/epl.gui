@@ -35,7 +35,7 @@ export type NavItem = {
 export const NAV_ITEMS: readonly NavItem[] = [
 	{ emoji: '🏠', label: 'Start', href: '/', hint: 'Übersicht' },
 	{ emoji: '📚', label: 'Module', hint: 'Modulkatalog mit Heimatstudiengang' },
-	{ emoji: '🗓️', label: 'Semester', hint: 'Semester, Phasen und Meilensteine' },
+	{ emoji: '🗓️', label: 'Semester', href: '/semester', hint: 'Semester, Phasen und Meilensteine' },
 	{
 		emoji: '🎯',
 		label: 'Bedarf',

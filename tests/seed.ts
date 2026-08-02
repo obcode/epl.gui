@@ -19,6 +19,9 @@ const ROLES: Record<string, readonly string[]> = {
 	'prof.zwei@example.org': ['LECTURER'],
 	// Vier plans — she is the persona an exception becomes visible on.
 	'prof.vier@example.org': ['LECTURER', 'PROGRAMME_LEAD'],
+	// Fuenf is the dean's office — the only persona that may create a semester and switch its
+	// phase. LECTURER on top because everybody in the planning holds it.
+	'dekanat@example.org': ['LECTURER', 'DEANS_OFFICE'],
 	// Sechs administers. LECTURER on top, because the role preview only offers a selection from
 	// the HELD roles: "let me see what a lecturer sees" presupposes being one. That is not
 	// awkwardness but the reason the preview cannot add anything.

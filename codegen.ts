@@ -1,14 +1,14 @@
 import type { CodegenConfig } from '@graphql-codegen/cli';
 
-// client-preset mit Documents-Glob, nicht nur Schema-Typen.
+// client-preset with a documents glob, not just schema types.
 //
-// Bewusste Abweichung vom Schwesterprojekt: dort erzeugt der Codegen 4375 Zeilen Typen, die
-// genau eine Datei importiert — die Abfrageergebnisse sind faktisch `any`. Mit dem
-// client-preset ist jedes `graphql(...)`-Dokument typisiert, und `graphql-request` liefert
-// das passende Ergebnis, ohne dass man den Typ von Hand danebenschreibt.
+// A deliberate departure from the sibling project: there the codegen produces 4375 lines of
+// types that exactly one file imports — the query results are effectively `any`. With the
+// client-preset every `graphql(...)` document is typed, and `graphql-request` returns the
+// matching result without anybody writing the type next to it by hand.
 //
-// Quelle ist die eingecheckte schema.graphql, nicht das laufende Backend: so funktioniert
-// `pnpm codegen` offline und in der CI. Aktualisiert wird sie mit `pnpm run update-schema`.
+// The source is the committed schema.graphql, not the running backend: that way `pnpm codegen`
+// works offline and in CI. It is refreshed with `pnpm run update-schema`.
 const config: CodegenConfig = {
 	schema: './schema.graphql',
 	documents: ['src/**/*.{ts,svelte}', '!src/lib/gql/__generated__/**'],
@@ -18,10 +18,10 @@ const config: CodegenConfig = {
 			preset: 'client',
 			config: {
 				useTypeImports: true,
-				// Ohne diese Zuordnung wird jeder eigene Skalar zu `unknown`, und jede Stelle,
-				// die einen Zeitpunkt formatiert, braucht einen Cast — also genau die
-				// Behauptung, die der Codegen ersetzen soll. Auf der Leitung ist `Time` ein
-				// RFC-3339-String; ein `Date` wäre gelogen, weil JSON keins kennt.
+				// Without this mapping every custom scalar becomes `unknown`, and every place that
+				// formats a moment needs a cast — which is exactly the assertion the codegen is
+				// meant to replace. On the wire `Time` is an RFC 3339 string; a `Date` would be a
+				// lie, because JSON has none.
 				scalars: {
 					Time: 'string'
 				}

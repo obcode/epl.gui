@@ -5,14 +5,14 @@
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<title>Tallox — %sveltekit.status%</title>
 		<!--
-			Diese Seite erscheint, wenn das Root-Layout selbst nicht laden konnte. In der Praxis ist
-			das genau ein Fall: jemand ist durch die HM-Anmeldung gekommen, aber diese Installation
-			kennt die Kennung nicht — oder das Konto ist deaktiviert. SvelteKit rendert dafür nicht
-			`+error.svelte`, weil dessen Rahmen ja gerade das ist, was fehlgeschlagen ist.
+			This page appears when the root layout itself could not load. In practice that is exactly
+			one case: somebody came through the HM sign-in, but this installation does not know the
+			login — or the account is deactivated. SvelteKit renders no `+error.svelte` for that,
+			because that layout's frame is precisely what failed.
 
-			Deshalb steht hier alles inline und nichts kommt aus der App: kein Tailwind, kein
-			daisyUI, keine Schriftart von außen. Eine Fehlerseite, die ihre eigenen Abhängigkeiten
-			braucht, ist genau dann kaputt, wenn man sie braucht.
+			So everything here is inline and nothing comes from the app: no Tailwind, no daisyUI, no
+			font from outside. An error page that needs its own dependencies is broken exactly when
+			it is needed.
 		-->
 		<style>
 			:root {

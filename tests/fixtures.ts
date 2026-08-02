@@ -19,6 +19,8 @@ export const PERSONAS = {
 	zwei: { mail: 'prof.zwei@example.org', name: 'Prof. Zwei' },
 	/** A planner: sees wishes before publication, because the process requires it. */
 	vier: { mail: 'prof.vier@example.org', name: 'Prof. Vier' },
+	/** The dean's office: runs the process, so switches the phases and publishes the wishes. */
+	fuenf: { mail: 'dekanat@example.org', name: 'Deans Office' },
 	/** Administers people and roles — and deliberately reads no wishes. */
 	sechs: { mail: 'admin@example.org', name: 'Admin' }
 } as const;

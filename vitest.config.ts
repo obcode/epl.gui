@@ -4,8 +4,8 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
 	plugins: [sveltekit()],
 	test: {
-		// Bewusst eng auf src/: sonst zieht `pnpm test` die Playwright-Specs aus tests/ mit
-		// hinein und scheitert daran, dass sie einen Browser erwarten.
+		// Deliberately narrowed to src/: otherwise `pnpm test` pulls the Playwright specs from
+		// tests/ in as well and fails because they expect a browser.
 		include: ['src/**/*.{test,spec}.{js,ts}'],
 		environment: 'node',
 		coverage: {
@@ -14,17 +14,16 @@ export default defineConfig({
 			exclude: [
 				'src/lib/gql/__generated__/**',
 				'**/*.test.ts',
-				// Komponenten prüft Playwright im echten Browser, nicht vitest. Sie hier
-				// mitzumessen würde die Zahl dauerhaft auf ein Drittel drücken und damit jede
-				// Schwelle unbrauchbar machen — die Konvention ist ohnehin, Logik aus .svelte
-				// in ein lib-Modul zu ziehen und dieses zu testen.
+				// Playwright checks components in a real browser, not vitest. Measuring them here
+				// would push the figure down to a third permanently and make every threshold
+				// useless — and the convention is to pull logic out of .svelte into a lib module
+				// and test that anyway.
 				'src/lib/components/**'
 			],
 			reporter: ['text', 'html', 'lcov'],
-			// Eine Ratsche, keine Zielvorgabe: die Werte liegen knapp unter dem aktuellen
-			// Stand. Sie sollen nicht beweisen, dass genug getestet ist, sondern verhindern,
-			// dass ein größerer ungetesteter Block unbemerkt dazukommt. Wer sie hebt, hebt sie
-			// im selben Commit wie die Tests.
+			// A ratchet, not a target: the values sit just below the current level. They are not
+			// meant to prove enough is tested but to stop a larger untested block arriving
+			// unnoticed. Whoever raises them raises them in the same commit as the tests.
 			thresholds: {
 				statements: 80,
 				branches: 75,

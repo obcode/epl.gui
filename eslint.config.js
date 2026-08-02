@@ -15,7 +15,7 @@ export default ts.config(
 			globals: {
 				...globals.browser,
 				...globals.node,
-				// Zur Bauzeit von vite.config.ts eingesetzt.
+				// Substituted at build time by vite.config.ts.
 				__APP_VERSION__: 'readonly',
 				__BUILD_TIME__: 'readonly'
 			}
@@ -35,7 +35,7 @@ export default ts.config(
 			'node_modules/',
 			'src/lib/gql/__generated__/',
 			'schema.graphql',
-			// Testausgaben, nicht Quellcode.
+			// Test output, not source.
 			'coverage/',
 			'playwright-report/',
 			'test-results/'

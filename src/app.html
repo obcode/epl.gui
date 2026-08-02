@@ -1,23 +1,23 @@
 <!doctype html>
 <!--
-	Das data-theme setzt hooks.server.ts aus dem Cookie ein. Platzhalter für das ganze Attribut
-	und nicht nur für den Wert: bei der Auswahl „System" muss es komplett verschwinden, sonst
-	greifen die --default/--prefersdark-Themes aus app.css nicht.
+	hooks.server.ts substitutes data-theme from the cookie. A placeholder for the whole attribute
+	and not just for the value: with the "System" choice it has to disappear entirely, or the
+	--default/--prefersdark themes from app.css do not apply.
 -->
 <html lang="de" %tallox.themeattr%>
 	<head>
 		<meta charset="utf-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1" />
 		<link rel="icon" href="%sveltekit.assets%/favicon.svg" />
-		<!-- Fallback-Titel. Seiten überschreiben ihn mit <svelte:head>, aber ohne einen hier
-		     hätte jede Seite, die das vergisst, gar keinen — und ein Dokument ohne <title> ist
-		     ein WCAG-Verstoß (2.4.2) und in einer Leiste voller Tabs nicht wiederfindbar.
-		     Steht vor der head-Einfügung unten, damit ein eigener Titel gewinnt.
+		<!-- The fallback title. Pages override it with <svelte:head>, but without one here any
+		     page that forgets would have none at all — and a document without a <title> is a WCAG
+		     violation (2.4.2) and unfindable in a bar full of tabs.
+		     It stands before the head insertion below so that a page's own title wins.
 
-		     ACHTUNG: In dieser Datei niemals einen sveltekit-Platzhalter im Fließtext eines
-		     Kommentars erwähnen. Die Ersetzung trifft das ERSTE Vorkommen — sie würde hier
-		     zuschlagen, das Stylesheet in den Kommentar schreiben und den echten Platzhalter
-		     weiter unten als sichtbaren Text stehen lassen. -->
+		     CAUTION: never mention a sveltekit placeholder in the prose of a comment in this
+		     file. The substitution hits the FIRST occurrence — it would strike here, write the
+		     stylesheet into the comment and leave the real placeholder further down as visible
+		     text. -->
 		<title>Tallox — Einsatzplanung FK07</title>
 		%sveltekit.head%
 	</head>

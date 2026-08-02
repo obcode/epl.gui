@@ -4,24 +4,23 @@ const CI = !!process.env.CI;
 
 export default defineConfig({
 	testDir: 'tests',
-	// Legt die Personen an, bevor der erste Test läuft. Seit das Backend Identität durchsetzt,
-	// ist eine Persona ohne Zeile in `person` niemand — und jede Seite antwortet mit 401.
+	// Creates the people before the first test runs. Since the backend enforces identity, a
+	// persona with no row in `person` is nobody — and every page answers 401.
 	globalSetup: './tests/global-setup.ts',
 	timeout: 60_000,
 	fullyParallel: true,
-	// /dev/shm ist im DevContainer nur 64 MB — mehr Worker lassen Chromium abstürzen. Auf einem
-	// CI-Runner ist das kein Thema, dort begrenzt nur die Anzahl der Kerne.
+	// /dev/shm is only 64 MB in the DevContainer — more workers make Chromium crash. On a CI
+	// runner that is not an issue; there only the core count limits it.
 	workers: CI ? 4 : 2,
 	retries: CI ? 2 : 1,
 
-	// Ein `test.only`, das versehentlich mitcommittet wird, macht die E2E-Stufe grün, obwohl
-	// sie fast nichts mehr ausführt — und niemand sieht es, weil ein grüner Haken wie ein
-	// grüner Haken aussieht.
+	// A `test.only` committed by accident makes the end-to-end stage green although it barely
+	// runs anything — and nobody sees it, because a green tick looks like a green tick.
 	forbidOnly: CI,
 
 	reporter: CI
 		? [
-				// Annotationen direkt am Diff im Pull Request.
+				// Annotations right on the diff in the pull request.
 				['github'],
 				['html', { open: 'never' }],
 				['list']
@@ -30,9 +29,9 @@ export default defineConfig({
 
 	use: {
 		baseURL: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:4173',
-		// Nur beim Wiederholungslauf: ein Trace pro Test wäre bei jedem grünen Lauf ein paar
-		// hundert Megabyte Artefakte, die niemand ansieht. Beim Fehlschlag ist er das
-		// Einzige, womit man einen CI-Fehler ohne Reproduktion versteht.
+		// On the retry only: a trace per test would be a few hundred megabytes of artefacts nobody
+		// looks at on every green run. On a failure it is the only thing that makes a CI error
+		// understandable without a reproduction.
 		trace: 'on-first-retry',
 		screenshot: 'only-on-failure',
 		video: CI ? 'retain-on-failure' : 'off'
@@ -49,17 +48,17 @@ export default defineConfig({
 	],
 
 	webServer: {
-		// npm statt pnpm mit Absicht: der Unterprozess erbt sonst die Corepack-Versionsprüfung
-		// und stirbt an einem pnpm-Minor-Versatz.
+		// npm rather than pnpm on purpose: otherwise the subprocess inherits the Corepack version
+		// check and dies on a pnpm minor mismatch.
 		command: 'npm run build && npm run preview',
 		port: 4173,
 		timeout: 180_000,
-		// Lokal den laufenden Server weiterbenutzen; in CI niemals — dort wäre ein
-		// weiterlaufender Server aus einem früheren Job ein Test gegen alten Code.
+		// Reuse a running server locally; never in CI — there a server left over from an earlier
+		// job would be a test against old code.
 		reuseExistingServer: !CI,
 		env: {
-			// Der SSR-Prozess braucht die Backend-URL. Ohne sie fällt backend.ts auf
-			// localhost:8080 zurück, was lokal stimmt und in CI vom Wert überschrieben wird.
+			// The SSR process needs the backend URL. Without it backend.ts falls back to
+			// localhost:8080, which is right locally and is overridden by this value in CI.
 			TALLOX_SERVER: process.env.TALLOX_SERVER ?? 'http://localhost:8080/query'
 		}
 	}

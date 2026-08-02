@@ -45,7 +45,17 @@ const PASS_THROUGH = new Set([
 	'PERSON_NOT_FOUND',
 	'NAME_TOO_LONG',
 	'UNKNOWN_ROLE',
-	'GRANT_EXPIRY_OUT_OF_RANGE'
+	'GRANT_EXPIRY_OUT_OF_RANGE',
+	// The semester workflow. Nothing here is confidential either — which semesters exist and
+	// where each one stands is visible to everybody signed in — and the sentences are the useful
+	// answer: PHASE_MOVED_ON in particular asks for a reload, which is exactly what the reader
+	// has to do.
+	'SEMESTER_CODE_INVALID',
+	'SEMESTER_EXISTS',
+	'SEMESTER_NOT_FOUND',
+	'PHASE_NOT_ADJACENT',
+	'PHASE_MOVED_ON',
+	'PHASE_UNKNOWN'
 ]);
 
 /** What is shown when the error is none of the known ones. */
