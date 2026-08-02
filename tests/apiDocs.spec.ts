@@ -1,62 +1,65 @@
 import { test, expect, PERSONAS, gotoRendered } from './fixtures';
 
 /**
- * Die API-Dokumentation.
+ * The API documentation.
  *
- * Sie ist der Grund, warum die Doku in der Anwendung steht und nicht auf GitHub: sie nennt
- * den Endpunkt, und der Hostname der Produktion darf in keinem öffentlichen Repository
- * stehen. Eine Anleitung, die ihre wichtigste Angabe nicht enthalten darf, ist keine.
+ * It is the reason the documentation lives in the application and not on GitHub: it names the
+ * endpoint, and the production hostname must not appear in any public repository. Instructions
+ * that may not contain their most important detail are not instructions.
  */
-test.describe('API-Dokumentation', () => {
-	test('nennt den Endpunkt und den Weg zum Token', async ({ asPersona }) => {
+test.describe('API documentation', () => {
+	test('names the endpoint and the way to a token', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/api-doku');
 
-		// Der Endpunkt kommt aus der Konfiguration, nicht aus dem Markup — hier wird geprüft,
-		// dass er überhaupt ankommt und auf die Token-Tür zeigt.
+		// The endpoint comes from the configuration, not from the markup — what is checked here
+		// is that it arrives at all and points at the token door.
 		await expect(page.getByText('/api/graphql').first()).toBeVisible();
 
 		await page.getByRole('link', { name: /Konto → Tokens/ }).click();
 		await expect(page).toHaveURL(/\/konto\/tokens$/);
 	});
 
-	test('erklärt, dass manche Felder über ein Token nicht antworten', async ({ asPersona }) => {
+	test('explains that some fields do not answer through a token', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/api-doku');
 
-		// Der Punkt, an dem sonst jede zweite Rückfrage entsteht: dieselbe Abfrage liefert je
-		// nach Tür etwas anderes, und ohne diesen Absatz sieht das nach einem Fehler aus.
+		// The point every other support question would otherwise come from: the same query
+		// returns something different depending on the door, and without this paragraph that
+		// looks like a defect.
 		await expect(page.getByText(/INTERACTIVE_ONLY/)).toBeVisible();
 	});
 
-	test('zeigt Beispiele für mehrere Sprachen, ohne Token im Quelltext', async ({ asPersona }) => {
+	test('shows examples in several languages, with no token in the source', async ({
+		asPersona
+	}) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/api-doku');
 
 		for (const label of ['curl', 'Python', 'R']) {
-			// exact: true — sonst trifft 'R' auch 'curl'.
+			// exact: true — otherwise 'R' also matches 'curl'.
 			await page.getByRole('tab', { name: label, exact: true }).click();
 			const code = page.locator('pre code').first();
 			await expect(code).toContainText('TALLOX_TOKEN');
-			// Die Anleitung macht vor, was sie fordert.
+			// The instructions demonstrate what they ask for.
 			await expect(code).not.toContainText(/tallox_[0-9A-Z]{16}_/);
 		}
 	});
 
-	test('die Schema-Referenz kommt aus dem Schema', async ({ asPersona }) => {
+	test('the schema reference comes from the schema', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/api-doku/schema');
 
-		// Query zuerst — das ist, was jemand sucht. Und ein Feld, das es wirklich gibt.
+		// Query first — that is what somebody is looking for. And a field that really exists.
 		await expect(page.getByRole('heading', { name: 'Query', exact: false })).toBeVisible();
 		await expect(page.getByText('myTokens').first()).toBeVisible();
 
-		// Die Nullbarkeit steht mit dabei: `[PersonalAccessToken!]` ohne abschließendes `!` ist
-		// genau die Art, wie @interactiveOnly antwortet, ohne die Abfrage zu kippen.
+		// The nullability comes with it: `[PersonalAccessToken!]` without a trailing `!` is
+		// exactly how @interactiveOnly answers without failing the query.
 		await expect(page.getByText('[PersonalAccessToken!]').first()).toBeVisible();
 	});
 
-	test('beide Seiten sind barrierefrei', async ({ asPersona, checkA11y }) => {
+	test('both pages are accessible', async ({ asPersona, checkA11y }) => {
 		const page = await asPersona(PERSONAS.eins);
 
 		await gotoRendered(page, '/api-doku');

@@ -9,15 +9,15 @@
 
 	let { current }: { current: ThemeChoice } = $props();
 
-	// Zwei Quellen, bewusst getrennt: `current` kommt aus dem Cookie und ist beim SSR schon
-	// richtig, `chosen` entsteht erst durch einen Klick. Ein $state, das mit `current`
-	// initialisiert wird, würde den Prop-Wert nur einmal einfangen und danach nicht mehr folgen.
+	// Two sources, deliberately kept apart: `current` comes from the cookie and is already right
+	// during SSR, `chosen` only comes into being through a click. A $state initialised from
+	// `current` would capture the prop once and stop following it afterwards.
 	let chosen = $state<ThemeChoice | null>(null);
 	const selected = $derived(chosen ?? current);
 
-	// Kein Reload und kein invalidate(): das Theme steckt in einem CSS-Attribut, ein Roundtrip
-	// zum Server wäre für einen Attributwechsel unverhältnismäßig. Der Cookie sorgt nur dafür,
-	// dass der NÄCHSTE SSR-Request schon richtig rendert.
+	// No reload and no invalidate(): the theme lives in a CSS attribute, and a round trip to the
+	// server would be out of proportion for changing one. The cookie only makes sure the NEXT
+	// SSR request already renders correctly.
 	function choose(theme: ThemeChoice) {
 		chosen = theme;
 
@@ -27,8 +27,8 @@
 			document.documentElement.dataset.theme = theme;
 		}
 
-		// SameSite=Lax, kein Secure: der Wert ist eine Vorliebe, kein Geheimnis, und in der
-		// lokalen Entwicklung läuft die App über http.
+		// SameSite=Lax, no Secure: the value is a preference, not a secret, and in local
+		// development the app runs over http.
 		document.cookie = `${THEME_COOKIE}=${theme}; path=/; max-age=${THEME_COOKIE_MAX_AGE}; samesite=lax`;
 	}
 

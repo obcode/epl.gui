@@ -22,35 +22,34 @@ const SessionDocument = graphql(`
 export type SessionInfo = SessionQuery['session'];
 
 /**
- * Was beim Laden der Sitzung herauskommen kann.
+ * What loading the session can come out as.
  *
- * Drei Ausgänge und nicht zwei, weil „das Backend antwortet nicht" und „dieses Konto darf
- * nicht" für die Benutzerin völlig verschiedene Nachrichten sind — und weil die zweite bisher
- * als die erste angezeigt wurde. Wer eine HM-Kennung hat, aber keine Zeile in `person`, kam
- * durch den Auth-Proxy und bekam vom Backend einen 401; die GUI schluckte den und schrieb
- * „Backend nicht erreichbar" in den Footer. Die nützliche Auskunft wäre gewesen: „Du hast
- * keinen Zugang, wende Dich an die Administration."
+ * Three outcomes rather than two, because "the backend is not answering" and "this account is
+ * not allowed" are completely different messages for the user — and because the second used to
+ * be displayed as the first. Somebody with an HM login but no row in `person` came through the
+ * auth proxy and got a 401 from the backend; the GUI swallowed it and wrote "Backend nicht
+ * erreichbar" into the footer. The useful answer would have been: you have no access, please
+ * contact the administrators.
  */
 export type SessionResult =
 	| { kind: 'ok'; session: SessionInfo }
-	/** Angemeldet beim IdP, aber diese Installation kennt die Kennung nicht (oder nicht mehr). */
+	/** Signed in at the IdP, but this installation does not know the login (or no longer does). */
 	| { kind: 'no-access'; message: string }
-	/** Backend weg, Datenbank weg, Deploy läuft. Vorübergehend, und nicht die Schuld der Person. */
+	/** Backend gone, database gone, deploy running. Temporary, and not the person's fault. */
 	| { kind: 'unreachable' };
 
-/** Was angezeigt wird, wenn das Backend keinen eigenen Satz mitgeliefert hat. */
+/** What is shown when the backend did not supply a sentence of its own. */
 export const NO_ACCESS_MESSAGE =
 	'Für diese Kennung gibt es in Tallox kein Konto. Bitte bei der Administration melden.';
 
 /**
- * Lädt die Sitzung und ordnet den Fehlerfall ein.
+ * Loads the session and classifies the failure case.
  *
- * Die Unterscheidung hängt am HTTP-Status, nicht am Fehlercode: die Ablehnungen aus
- * `internal/auth` tragen alle `UNAUTHENTICATED`, und der Unterschied zwischen „kein Konto"
- * (401) und „ich kann gerade niemanden prüfen" (503) steckt genau im Status. Das ist im
- * Backend eine bewusste Entscheidung — einer Kollegin zu sagen, ihr Zugang sei ungültig,
- * während die Datenbank neu startet, ist der Weg zu einem Ticket über ein Problem, das es
- * nicht gibt.
+ * The distinction hangs on the HTTP status, not on the error code: the refusals from
+ * `internal/auth` all carry `UNAUTHENTICATED`, and the difference between "no account" (401)
+ * and "I cannot check anybody right now" (503) sits exactly in the status. That is a deliberate
+ * decision in the backend — telling a colleague her access is invalid while the database is
+ * restarting is the way to a ticket about a problem that does not exist.
  */
 export async function loadSession(): Promise<SessionResult> {
 	try {
@@ -65,12 +64,12 @@ export async function loadSession(): Promise<SessionResult> {
 }
 
 /**
- * Der Satz des Backends, wenn es einen mitgeschickt hat.
+ * The backend's sentence, when it sent one.
  *
- * Hier ausnahmsweise durchgereicht statt über die Allowlist in graphqlError.ts: die
- * Ablehnungen von `internal/auth` sind für genau diese Situation geschriebene deutsche Sätze
- * („Dieses Konto ist deaktiviert"), und sie unterscheiden Fälle, die die Person kennen muss.
- * Sie entstehen vor jedem Datenzugriff und können deshalb nichts über Daten verraten.
+ * Passed through here as an exception rather than via the allowlist in graphqlError.ts: the
+ * refusals from `internal/auth` are German sentences written for exactly this situation
+ * ("Dieses Konto ist deaktiviert"), and they distinguish cases the person needs to know about.
+ * They arise before any data access and therefore cannot give anything away about data.
  */
 function refusalMessage(error: unknown): string {
 	const errors = (error as { response?: { errors?: { message?: unknown }[] } })?.response?.errors;

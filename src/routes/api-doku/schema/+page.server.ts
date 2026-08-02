@@ -1,9 +1,9 @@
-// Der SDL-Text wird zur Bauzeit eingebettet (`?raw`), nicht zur Laufzeit gelesen: im
-// gebauten Container liegt `schema.graphql` nicht neben dem Server, und ein Dateizugriff
-// wäre eine Fehlerquelle für etwas, das sich zwischen zwei Builds ohnehin nicht ändert.
+// The SDL text is embedded at build time (`?raw`) rather than read at runtime: in the built
+// container `schema.graphql` does not sit next to the server, and a file access would be a
+// source of failure for something that does not change between two builds anyway.
 //
-// Es ist dieselbe Datei, aus der `pnpm codegen` die Typen erzeugt. Die Referenz kann damit
-// nicht von dem abweichen, was diese Anwendung selbst abfragt.
+// It is the same file `pnpm codegen` generates the types from. The reference therefore cannot
+// diverge from what this application itself queries.
 import schemaSDL from '../../../../schema.graphql?raw';
 import { buildSchemaDoc } from '$lib/schemaDoc';
 import type { PageServerLoad } from './$types';

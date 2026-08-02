@@ -17,7 +17,7 @@
 		theme: ThemeChoice;
 		remoteUser: string | null;
 		remoteDisplayname: string | null;
-		/** Die Rollen, nach denen der Server diesen Request beurteilt — nicht die gehaltenen. */
+		/** The roles the server judges this request by — not the ones held. */
 		effectiveRoles: readonly string[];
 		grantedRoles: readonly string[];
 		narrowed: boolean;
@@ -25,9 +25,9 @@
 
 	const pathname = $derived(page.url.pathname);
 
-	// Kosmetik, kein Riegel: dieselbe API ist mit einem Token direkt erreichbar. Was das
-	// Ausblenden trotzdem wert ist: wer „Statistik" im Menü sieht und bei jedem Klick eine
-	// Ablehnung bekommt, lernt, Ablehnungen zu ignorieren.
+	// Cosmetic, not a lock: the same API is reachable directly with a token. What hiding is
+	// worth anyway: somebody who sees "Statistik" in the menu and gets a refusal on every click
+	// learns to ignore refusals.
 	const areas = $derived(visibleNavItems(NAV_ITEMS, effectiveRoles));
 	const account = $derived(visibleNavItems(ACCOUNT_ITEMS, effectiveRoles));
 </script>
@@ -44,15 +44,15 @@
 			<span class="text-base-content/80 hidden text-sm xl:inline">Einsatzplanung FK07</span>
 		</a>
 
-		<!-- Ab lg nebeneinander, darunter im Hamburger.
-		     Ursprünglich md (768px). Dort passen die sieben Bereiche aber nicht: die Leiste
-		     wurde 883px breit und schob den Body über den Viewport — ausgerechnet ab der
-		     Breite, an der CLAUDE.md volle Benutzbarkeit zusagt. Gefunden von
-		     tests/responsive.spec.ts, das die Breiten seither bewacht.
-		     Tablet-first heißt vollständig bedienbar, nicht alles gleichzeitig sichtbar: bis
-		     1024px trägt das Menü die Navigation, und es enthält dieselben Einträge.
-		     Zusammen mit dem xl beim Marken-Untertitel oben — lg allein genügt nicht, weil
-		     lg *ab* 1024px greift und die Leiste bei genau 1024 sonst 1117px bräuchte. -->
+		<!-- Side by side from lg, below that in the hamburger.
+		     Originally md (768px). The seven areas do not fit there: the bar became 883px wide
+		     and pushed the body past the viewport — at exactly the width CLAUDE.md promises full
+		     usability from. Found by tests/responsive.spec.ts, which has watched the widths
+		     since.
+		     Tablet-first means fully operable, not everything visible at once: up to 1024px the
+		     menu carries the navigation, and it holds the same entries.
+		     Together with the xl on the brand subtitle above — lg alone is not enough, because
+		     lg applies *from* 1024px and at exactly 1024 the bar would otherwise need 1117px. -->
 		<ul class="ml-4 hidden flex-1 items-center gap-1 lg:flex">
 			{#each areas as item (item.label)}
 				<li>
@@ -80,13 +80,13 @@
 		</ul>
 
 		<div class="ml-auto flex items-center gap-1 lg:ml-0">
-			<!-- Erst ab lg, also genau dort, wo auch die Bereichsleiste erscheint. Darunter
-			     trägt das Menü unten die Identität — sie fehlt also nie ganz, sie steht nur
-			     woanders. -->
+			<!-- Only from lg, so exactly where the area bar appears too. Below that the menu at
+			     the bottom carries the identity — it is never missing, it just sits somewhere
+			     else. -->
 			{#if remoteUser}
-				<!-- Die Identität ist ab lg zugleich der Einstieg ins Konto. Ein eigener
-				     Menüpunkt in der Bereichsleiste wäre falsch: dort steht der Planungsprozess
-				     in seiner Reihenfolge, und Tokens sind kein Schritt darin. -->
+				<!-- From lg the identity doubles as the way into the account. A separate entry in
+				     the area bar would be wrong: that bar holds the planning process in its
+				     order, and tokens are not a step in it. -->
 				<div class="dropdown dropdown-end hidden lg:block">
 					<div
 						tabindex="0"
@@ -115,11 +115,10 @@
 					</ul>
 				</div>
 			{:else}
-				<!-- Badge statt `text-warning`: die semantischen daisyUI-Farben sind
-				     Hintergrund­farben. Als Textfarbe auf base-100 erreichen sie auf den hellen
-				     Themes 1.35:1 bis 2.9:1 — weit unter den 4.5:1 aus WCAG 1.4.3. Als
-				     Badge-Hintergrund werden sie mit `warning-content` gepaart, und dieses
-				     Paar ist auf Kontrast ausgelegt. -->
+				<!-- A badge rather than `text-warning`: daisyUI's semantic colours are background
+				     colours. As a text colour on base-100 they reach 1.35:1 to 2.9:1 on the light
+				     themes — far below the 4.5:1 of WCAG 1.4.3. As a badge background they are
+				     paired with `warning-content`, and that pair is built for contrast. -->
 				<span
 					class="badge badge-warning badge-sm hidden items-center gap-1 lg:inline-flex"
 					title="Kein X-Remote-User — lokale Entwicklung ohne Auth-Proxy"
@@ -165,9 +164,9 @@
 						</li>
 					{/each}
 
-					<!-- Unter lg trägt dieses Menü beides. Dieselben Einträge wie im Kontomenü
-					     oben: eine Navigation, die je nach Breite andere Ziele kennt, ist die
-					     Art von Unterschied, die niemand vermutet und jeder sucht. -->
+					<!-- Below lg this menu carries both. The same entries as the account menu
+					     above: a navigation that knows different destinations depending on the
+					     width is the kind of difference nobody suspects and everybody hunts. -->
 					<li></li>
 					<li class="menu-title">Konto</li>
 					{#each account as item (item.label)}

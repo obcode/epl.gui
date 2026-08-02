@@ -12,15 +12,15 @@
 </script>
 
 <!--
-	Nicht wegklickbar, und über allem.
+	Not dismissible, and above everything.
 
-	Wer vergisst, dass er verengt ist, meldet irgendwann eine fehlende Funktion als Fehler —
-	und im schlimmeren Fall trifft jemand eine Entscheidung auf Basis einer Liste, die absichtlich
-	unvollständig ist. Der Streifen kostet 40 Pixel und erspart beides.
+	Somebody who forgets they are narrowed eventually reports a missing feature as a bug — and in
+	the worse case makes a decision based on a list that is deliberately incomplete. The strip
+	costs 40 pixels and saves both.
 
-	Farbe als Hintergrund, nicht als Textfarbe: `text-warning` auf base-100 liegt auf den hellen
-	Themes zwischen 1.35:1 und 3.5:1 und ist damit unter den 4.5:1 aus WCAG 1.4.3. `bg-warning`
-	wird von daisyUI mit `warning-content` gepaart, und dieses Paar ist auf Kontrast ausgelegt.
+	Colour as a background, not as a text colour: `text-warning` on base-100 sits between 1.35:1
+	and 3.5:1 on the light themes and is therefore below the 4.5:1 of WCAG 1.4.3. daisyUI pairs
+	`bg-warning` with `warning-content`, and that pair is built for contrast.
 -->
 <div
 	class="bg-warning text-warning-content sticky top-0 z-30 px-3 py-1.5 text-sm sm:px-4 lg:px-8"

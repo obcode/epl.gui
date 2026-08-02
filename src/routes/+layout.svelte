@@ -8,10 +8,9 @@
 
 	let { data, children }: { data: LayoutData; children: Snippet } = $props();
 
-	// Kein Backend, keine Rollen. Das ist nicht dasselbe wie „keine Rechte": die Seite rendert
-	// während eines Deploys weiter, sie zeigt dann nur die Bereiche, die niemandem vorbehalten
-	// sind, und der Footer sagt warum. Ein Zugangsproblem sieht anders aus — es endet in
-	// +error.svelte.
+	// No backend, no roles. That is not the same as "no permissions": the page keeps rendering
+	// during a deploy, it then shows only the areas reserved for nobody, and the footer says
+	// why. An access problem looks different — it ends in +error.svelte.
 	const effectiveRoles = $derived(data.session?.effectiveRoles ?? []);
 	const grantedRoles = $derived(data.session?.grantedRoles ?? []);
 	const narrowed = $derived(data.session?.narrowed ?? false);
@@ -31,7 +30,7 @@
 		{narrowed}
 	/>
 
-	<!-- Horizontales Padding kommt aus dem Layout. Neue Seiten setzen kein eigenes p-8. -->
+	<!-- Horizontal padding comes from the layout. New pages do not set a p-8 of their own. -->
 	<main class="mx-auto w-full max-w-6xl flex-1 px-3 py-6 sm:px-4 lg:px-8">
 		{@render children()}
 	</main>

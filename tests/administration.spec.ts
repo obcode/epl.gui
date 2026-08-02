@@ -2,29 +2,29 @@ import { expect } from '@playwright/test';
 import { PERSONAS, gotoRendered, test } from './fixtures';
 
 /**
- * Wer die Verwaltung sieht, wer sie benutzen kann, und was die Rollenvorschau tut.
+ * Who sees the administration area, who can use it, and what the role preview does.
  *
- * Der Riegel steht im Backend und wird dort geprüft, durch beide Türen. Was hier geprüft wird,
- * kann keine Go-Testebene sehen: dass die Navigation aus den *effektiven* Rollen gebaut wird
- * und nicht aus den gehaltenen, dass der Cookie tatsächlich bis ans Backend durchkommt, und
- * dass der Rückweg aus einer Verengung erreichbar bleibt, in der die Verwaltung gerade
- * verschwunden ist.
+ * The lock is in the backend and is checked there, through both doors. What is checked here no
+ * Go test level can see: that the navigation is built from the *effective* roles and not from
+ * the held ones, that the cookie really reaches the backend, and that the way back out of a
+ * narrowing stays reachable from the state in which the administration area has just
+ * disappeared.
  */
 
-test.describe('Verwaltung', () => {
-	test('erscheint im Menü nur für die Administration', async ({ asPersona }) => {
+test.describe('administration', () => {
+	test('appears in the menu for administrators only', async ({ asPersona }) => {
 		const admin = await asPersona(PERSONAS.sechs);
 		await admin.goto('/');
 		await expect(admin.getByRole('button', { name: PERSONAS.sechs.name })).toBeVisible();
 
 		const lecturer = await asPersona(PERSONAS.eins);
 		await lecturer.goto('/');
-		// Kosmetik, aber die richtige: wer den Eintrag sieht und bei jedem Klick eine Ablehnung
-		// bekommt, lernt, Ablehnungen zu ignorieren.
+		// Cosmetic, but the right kind: somebody who sees the entry and gets a refusal on every
+		// click learns to ignore refusals.
 		await expect(lecturer.getByRole('link', { name: /Verwaltung/ })).toHaveCount(0);
 	});
 
-	test('listet die Personen für die Administration', async ({ asPersona }) => {
+	test('lists the people for administrators', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.sechs);
 		await page.goto('/verwaltung/personen');
 
@@ -32,40 +32,40 @@ test.describe('Verwaltung', () => {
 		await expect(page.getByText(PERSONAS.eins.name)).toBeVisible();
 	});
 
-	test('weist eine Dozentin ab, statt ihr eine leere Liste zu zeigen', async ({ asPersona }) => {
+	test('refuses a lecturer rather than showing her an empty list', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		const response = await page.goto('/verwaltung/personen');
 
-		// Eine leere Tabelle und „Du darfst das nicht" sind verschiedene Auskünfte, und die
-		// erste sähe aus, als gäbe es niemanden im System.
+		// An empty table and "you may not do this" are different answers, and the first would look
+		// as though there were nobody in the system.
 		expect(response?.status()).toBeGreaterThanOrEqual(400);
 		await expect(page.getByText(PERSONAS.zwei.mail)).toHaveCount(0);
 	});
 });
 
-test.describe('Personen anlegen und Rollen setzen', () => {
-	test('legt mit der Mailadresse allein an und vergibt danach Rollen', async ({ asPersona }) => {
+test.describe('creating people and setting roles', () => {
+	test('creates with the mail address alone and grants roles afterwards', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.sechs);
 		await page.goto('/verwaltung/personen');
 
-		// Eine Adresse pro Lauf: Personen werden nie gelöscht, also würde ein fester Wert beim
-		// zweiten Lauf an PERSON_EXISTS scheitern — und das sähe aus wie ein Fehler in der
-		// Anwendung statt wie eine Datenbank mit Gedächtnis.
-		const mail = `neu.${Date.now()}@example.org`;
+		// One address per run: people are never deleted, so a fixed value would fail on
+		// PERSON_EXISTS the second time round — and that would look like a defect in the
+		// application rather than a database with a memory.
+		const mail = `new.${Date.now()}@example.org`;
 
 		await page.getByLabel('Mailadresse').fill(mail);
 		await page.getByRole('button', { name: 'Anlegen' }).click();
 
-		// Ohne Namen angelegt: dann steht die Adresse da, wo sonst der Name steht. Das ist der
-		// Normalfall und keine Lücke — der Name kommt später, von der Person selbst oder aus
-		// dem ZPA.
+		// Created without a name: the address then stands where the name otherwise would. That is
+		// the normal case and not a gap — the name comes later, from the person themselves or
+		// from the ZPA.
 		await page.getByRole('searchbox', { name: 'Suchen' }).fill(mail);
 		await page.getByRole('button', { name: 'Anwenden' }).click();
 		const row = page.getByRole('row').filter({ hasText: mail });
 		await expect(row).toContainText('— noch keine —');
 
-		// Rollen sind ein eigener Schritt, auch für LECTURER: wer was darf, soll eine Liste
-		// sein, die jemand geschrieben hat, und kein Standard, den niemand gewählt hat.
+		// Roles are a step of their own, LECTURER included: who may do what should be a list
+		// somebody wrote, not a default nobody chose.
 		await row.getByRole('button', { name: 'Bearbeiten' }).click();
 		await page.getByRole('checkbox', { name: /Dozent:in/ }).check();
 		await page.getByRole('button', { name: 'Rollen speichern' }).click();
@@ -73,21 +73,21 @@ test.describe('Personen anlegen und Rollen setzen', () => {
 		await expect(page.getByRole('row').filter({ hasText: mail })).toContainText('Dozent:in');
 	});
 
-	test('lässt die letzte Administration nicht entfernen', async ({ asPersona }) => {
-		// Der Sicherheitsstrick, von der Oberfläche aus gesehen. Die Regel selbst steht in
-		// einer Transaktion in internal/store und wird dort gegen die Datenbank geprüft; hier
-		// zählt nur, dass sie über den Bildschirm erreichbar ist, über den man den Schaden
-		// anrichten würde, und dass sie als lesbarer Satz ankommt und nicht als 500er.
+	test('does not let the last administrator be removed', async ({ asPersona }) => {
+		// The safety net, seen from the interface. The rule itself is a transaction in
+		// internal/store and is checked there against the database; all that counts here is that
+		// it is reachable from the screen the damage would be done on, and that it arrives as a
+		// readable sentence and not as a 500.
 		const page = await asPersona(PERSONAS.sechs);
 		await page.goto('/verwaltung/personen');
 
-		// Vorbedingung, und sie wird geprüft statt angenommen: die Regel greift nur, wenn es
-		// genau eine Administration gibt. Gäbe es lokal eine zweite, würde dieser Test die
-		// Persona tatsächlich deaktivieren — und jeder weitere Lauf begänne mit einer
-		// ausgesperrten Testidentität, die sich über die Oberfläche nicht reaktivieren lässt.
-		// In CI setzt der Seed den Zustand, lokal kann er abweichen.
+		// A precondition, and it is checked rather than assumed: the rule only applies when there
+		// is exactly one administrator. Were there a second one locally, this test would actually
+		// deactivate the persona — and every further run would start with a locked-out test
+		// identity that cannot be reactivated through the interface. In CI the seed sets the
+		// state, locally it can differ.
 		const admins = await page.getByRole('row').filter({ hasText: 'Administration' }).count();
-		test.skip(admins !== 1, `Diese Datenbank hat ${admins} Administrationen, der Test braucht 1.`);
+		test.skip(admins !== 1, `This database has ${admins} administrators, the test needs 1.`);
 
 		await page.getByRole('searchbox', { name: 'Suchen' }).fill(PERSONAS.sechs.mail);
 		await page.getByRole('button', { name: 'Anwenden' }).click();
@@ -100,23 +100,25 @@ test.describe('Personen anlegen und Rollen setzen', () => {
 	});
 });
 
-test.describe('Bereiche nach Rolle', () => {
-	test('zeigt Bedarf der Planung und Statistik nur dem Dekanat', async ({ asPersona }) => {
-		// Auf die Bereichsleiste eingegrenzt: „Bedarf" steht auch im Einleitungssatz der
-		// Startseite, und ein Test, der die ganze Seite absucht, prüft am Ende die Prosa.
+test.describe('areas by role', () => {
+	test("shows demand to planners and statistics only to the dean's office", async ({
+		asPersona
+	}) => {
+		// Narrowed to the area bar: "Bedarf" also appears in the introductory sentence of the
+		// start page, and a test that searches the whole page ends up checking the prose.
 		const lecturer = await asPersona(PERSONAS.eins);
 		await lecturer.goto('/');
-		// .first(): die Leiste rendert jeden Bereich zweimal — einmal nebeneinander ab lg,
-		// einmal im Hamburger-Menü darunter. Dass beide dieselben Einträge tragen, ist Absicht
-		// und wird in responsive.spec.ts geprüft.
+		// .first(): the bar renders every area twice — once side by side from lg, once in the
+		// hamburger menu below that. That both carry the same entries is intentional and is
+		// checked in responsive.spec.ts.
 		const lecturerNav = lecturer.getByRole('navigation');
 		await expect(lecturerNav.getByText('Wünsche').first()).toBeVisible();
 		await expect(lecturerNav.getByText('Bedarf')).toHaveCount(0);
 		await expect(lecturerNav.getByText('Statistik')).toHaveCount(0);
 
-		// Vier plant, sieht also Bedarf und Zuteilung — aber nicht die Statistik. Genau diese
-		// Zwischenstufe ist der Grund, warum die Sichtbarkeit eine Liste von Rollen pro
-		// Bereich ist und keine Rangfolge.
+		// Vier plans, so she sees demand and assignment — but not the statistics. That
+		// intermediate step is exactly why visibility is a list of roles per area and not a
+		// ranking.
 		const planner = await asPersona(PERSONAS.vier);
 		await planner.goto('/');
 		const plannerNav = planner.getByRole('navigation');
@@ -126,17 +128,17 @@ test.describe('Bereiche nach Rolle', () => {
 	});
 });
 
-test.describe('Rollenvorschau', () => {
-	test('nimmt Rechte weg und stellt sie zurück', async ({ asPersona }) => {
+test.describe('role preview', () => {
+	test('takes permissions away and puts them back', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.sechs);
 		await page.goto('/');
 
-		// Ohne Verengung: die Verwaltung ist erreichbar.
+		// Without narrowing: the administration area is reachable.
 		await expect(page.getByRole('button', { name: 'Rolle', exact: true })).toBeVisible();
 
-		// Als Dozent:in ansehen. Der Cookie geht an den SSR-Prozess, der ihn als
-		// X-Tallox-Assume-Roles ans Backend weiterreicht — dieser ganze Weg ist der Grund,
-		// warum das hier und nicht in vitest steht.
+		// Look as a lecturer. The cookie goes to the SSR process, which relays it to the backend
+		// as X-Tallox-Assume-Roles — that whole route is the reason this lives here and not in
+		// vitest.
 		await page
 			.context()
 			.addCookies([{ name: 'tallox_assume', value: 'LECTURER', url: page.url() }]);
@@ -146,17 +148,17 @@ test.describe('Rollenvorschau', () => {
 		const denied = await page.goto('/verwaltung/personen');
 		expect(denied?.status()).toBeGreaterThanOrEqual(400);
 
-		// Und der Rückweg. Er muss aus genau diesem Zustand erreichbar sein: eine Verengung,
-		// die man nur dort beenden kann, wo sie den Zugang gerade wegnimmt, ist eine Falle.
+		// And the way back. It has to be reachable from exactly this state: a narrowing you can
+		// only end where it is currently taking the access away is a trap.
 		await page.goto('/');
 		await page.getByRole('button', { name: 'Zurück zu meinen Rollen' }).first().click();
 		await expect(page.getByRole('status')).toHaveCount(0);
 	});
 
-	test('wird nur der Administration angeboten', async ({ asPersona }) => {
-		// Vier hält zwei Rollen (LECTURER + PROGRAMME_LEAD) und bekommt den Knopf trotzdem
-		// nicht: sie hat die Frage nicht, die er beantwortet, und was er tut — ihren
-		// Bedarfsbereich verschwinden lassen — sieht ohne die Frage nach einem Defekt aus.
+	test('is offered to administrators only', async ({ asPersona }) => {
+		// Vier holds two roles (LECTURER + PROGRAMME_LEAD) and still does not get the button: she
+		// does not have the question it answers, and what it does — make her demand area
+		// disappear — looks like a defect without that question.
 		const planner = await asPersona(PERSONAS.vier);
 		await planner.goto('/');
 		await expect(planner.getByRole('button', { name: 'Rolle', exact: true })).toHaveCount(0);
@@ -166,10 +168,10 @@ test.describe('Rollenvorschau', () => {
 		await expect(admin.getByRole('button', { name: 'Rolle', exact: true })).toBeVisible();
 	});
 
-	test('bleibt sichtbar, während man verengt ist', async ({ asPersona }) => {
-		// Die Bedingung hängt an den GEHALTENEN Rollen, nicht an den effektiven. Sonst wäre das
-		// Menü genau in dem Zustand weg, in dem man es zum Zurückkommen braucht — eine
-		// Administration, die sich auf LECTURER verengt hat, wirkt nicht mehr als ADMIN.
+	test('stays visible while narrowed', async ({ asPersona }) => {
+		// The condition hangs on the HELD roles, not on the effective ones. Otherwise the menu
+		// would be gone in exactly the state it is needed in to get back — an administrator
+		// narrowed to LECTURER no longer acts as ADMIN.
 		const page = await asPersona(PERSONAS.sechs);
 		await page.goto('/');
 		await page
@@ -180,11 +182,11 @@ test.describe('Rollenvorschau', () => {
 		await expect(page.getByRole('button', { name: 'Rolle', exact: true })).toBeVisible();
 	});
 
-	test('gibt niemandem eine Rolle, die er nicht hat', async ({ asPersona }) => {
-		// Der Kern der Sache. Der Cookie ist nicht vertrauenswürdig und muss es nicht sein:
-		// das Backend schneidet die Auswahl mit den tatsächlich gehaltenen Rollen, und ein
-		// Schnitt kann nichts hinzufügen. Wäre das je nicht so, wäre die Vorschau eine
-		// Rechteausweitung per Cookie.
+	test('gives nobody a role they do not hold', async ({ asPersona }) => {
+		// The heart of the matter. The cookie is not trustworthy and does not have to be: the
+		// backend intersects the selection with the roles actually held, and an intersection
+		// cannot add anything. Were that ever not so, the preview would be privilege escalation
+		// by cookie.
 		const page = await asPersona(PERSONAS.eins);
 		await page.goto('/');
 		await page.context().addCookies([{ name: 'tallox_assume', value: 'ADMIN', url: page.url() }]);
@@ -197,12 +199,11 @@ test.describe('Rollenvorschau', () => {
 	});
 });
 
-test.describe('Kein Konto', () => {
-	test('sagt das, statt das Backend für kaputt zu erklären', async ({ browser }) => {
-		// Jemand mit HM-Kennung, den diese Installation nicht kennt: durch den Auth-Proxy
-		// gekommen, aber ohne Zeile in `person`. Vorher endete das als „Backend nicht
-		// erreichbar" im Footer — eine Auskunft, die nach einer Störung klingt und den einen
-		// Schritt verschweigt, der hilft.
+test.describe('no account', () => {
+	test('says so rather than declaring the backend broken', async ({ browser }) => {
+		// Somebody with an HM login this installation does not know: through the auth proxy, but
+		// with no row in `person`. That used to end up as "Backend nicht erreichbar" in the footer
+		// — an answer that sounds like an outage and withholds the one step that helps.
 		const context = await browser.newContext({
 			extraHTTPHeaders: { 'X-Remote-User': 'niemand@example.org' }
 		});
@@ -210,27 +211,26 @@ test.describe('Kein Konto', () => {
 
 		const response = await page.goto('/');
 		expect(response?.status()).toBe(403);
-		// src/error.html und nicht +error.svelte: SvelteKit rendert für einen Fehler im
-		// Root-Layout kein +error.svelte, weil dessen Rahmen genau das ist, was fehlgeschlagen
-		// ist. Die Seite trägt deshalb ihr eigenes CSS und braucht die App nicht.
+		// src/error.html and not +error.svelte: SvelteKit renders no +error.svelte for an error in
+		// the root layout, because that layout is the thing that failed. The page therefore
+		// carries its own CSS and does not need the app.
 		await expect(page.getByRole('heading', { name: 'Kein Zugang zu Tallox' })).toBeVisible();
 
 		await context.close();
 	});
 });
 
-test.describe('Barrierefreiheit', () => {
-	test('die Verwaltung ist barrierefrei', async ({ asPersona, checkA11y }) => {
+test.describe('accessibility', () => {
+	test('the administration area is accessible', async ({ asPersona, checkA11y }) => {
 		const page = await asPersona(PERSONAS.sechs);
 		await gotoRendered(page, '/verwaltung/personen');
 		await checkA11y(page);
 	});
 
-	test('der Vorschau-Streifen ist barrierefrei', async ({ asPersona, checkA11y }) => {
-		// Eigener Test, weil der Streifen nur unter einer Bedingung existiert und die
-		// bestehende a11y-Prüfung ihn deshalb nie zu sehen bekommt. Er trägt eine semantische
-		// Farbe als Hintergrund — genau die Konstellation, an der in diesem Projekt schon
-		// einmal ein Kontrastbefund hing.
+	test('the preview strip is accessible', async ({ asPersona, checkA11y }) => {
+		// A test of its own, because the strip only exists under a condition and the existing
+		// a11y check therefore never gets to see it. It carries a semantic colour as a background
+		// — exactly the constellation a contrast finding already hung on once in this project.
 		const page = await asPersona(PERSONAS.sechs);
 		await page.goto('/');
 		await page
@@ -243,31 +243,29 @@ test.describe('Barrierefreiheit', () => {
 	});
 });
 
-test.describe('Diagnose', () => {
-	test('beantwortet die Supportfrage mit Entscheidungen, nicht mit Inhalten', async ({
-		asPersona
-	}) => {
-		// Das Feld ist @interactiveOnly, und die API-Konsole unter /api-doku geht bewusst durch
-		// die Token-Tür. Ohne diese Seite gäbe es in Produktion also gar keinen Weg, es zu
-		// benutzen — genau das war beim ersten Anlauf der Fall.
+test.describe('access diagnosis', () => {
+	test('answers the support question with decisions, not with content', async ({ asPersona }) => {
+		// The field is @interactiveOnly, and the API console under /api-doku deliberately goes
+		// through the token door. Without this page there would be no way to use it in production
+		// at all — which is exactly what happened on the first attempt.
 		const page = await asPersona(PERSONAS.sechs);
 		await page.goto(`/verwaltung/diagnose?mail=${encodeURIComponent(PERSONAS.eins.mail)}`);
 
 		await expect(page.getByRole('heading', { name: PERSONAS.eins.name })).toBeVisible();
 		await expect(page.getByText('policy.MayAdministerPeople')).toBeVisible();
-		// Eine Dozentin verwaltet nicht und liest keine fremden Wünsche — beide Antworten
-		// stehen da, mit Begründung.
+		// A lecturer does not administer and does not read other people's wishes — both answers
+		// are there, with reasons.
 		await expect(page.getByText(/Nur Planung und Dekanat/)).toBeVisible();
 	});
 
-	test('sagt bei einer unbekannten Adresse genau das', async ({ asPersona }) => {
+	test('says exactly that for an unknown address', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.sechs);
 		await page.goto('/verwaltung/diagnose?mail=gibtesnicht%40example.org');
 
 		await expect(page.getByText('Unbekannt')).toBeVisible();
 	});
 
-	test('ist für eine Dozentin nicht erreichbar', async ({ asPersona }) => {
+	test('is not reachable for a lecturer', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		const response = await page.goto(
 			`/verwaltung/diagnose?mail=${encodeURIComponent(PERSONAS.zwei.mail)}`
@@ -275,7 +273,7 @@ test.describe('Diagnose', () => {
 		expect(response?.status()).toBeGreaterThanOrEqual(400);
 	});
 
-	test('die Seite ist barrierefrei', async ({ asPersona, checkA11y }) => {
+	test('the page is accessible', async ({ asPersona, checkA11y }) => {
 		const page = await asPersona(PERSONAS.sechs);
 		await gotoRendered(page, `/verwaltung/diagnose?mail=${encodeURIComponent(PERSONAS.eins.mail)}`);
 		await checkA11y(page);

@@ -1,23 +1,23 @@
 import { describe, expect, it } from 'vitest';
 import { authContext } from './backend';
 
-// Kein Netzwerk, keine Mocks: geprüft wird nur, dass der AsyncLocalStorage die Identität
-// über await-Grenzen hinweg trägt. Genau das ist die Eigenschaft, auf der die
-// Header-Weitergabe an das Backend beruht — ginge sie verloren, liefe der SSR-Hop
-// unauthentifiziert weiter, ohne dass irgendwo etwas fehlschlägt.
+// No network, no mocks: all that is checked is that the AsyncLocalStorage carries the identity
+// across await boundaries. That is exactly the property the header relay to the backend rests
+// on — were it lost, the SSR hop would carry on unauthenticated without anything failing
+// anywhere.
 describe('authContext', () => {
-	it('trägt die Identität über await-Grenzen', async () => {
+	it('carries the identity across await boundaries', async () => {
 		await authContext.run({ remoteUser: 'prof.eins@example.org' }, async () => {
 			await Promise.resolve();
 			expect(authContext.getStore()?.remoteUser).toBe('prof.eins@example.org');
 		});
 	});
 
-	it('ist außerhalb eines run() leer', () => {
+	it('is empty outside a run()', () => {
 		expect(authContext.getStore()).toBeUndefined();
 	});
 
-	it('isoliert nebenläufige Requests voneinander', async () => {
+	it('isolates concurrent requests from one another', async () => {
 		const seen: (string | undefined)[] = [];
 		await Promise.all([
 			authContext.run({ remoteUser: 'eins@example.org' }, async () => {

@@ -42,11 +42,11 @@ const RevokeToken = graphql(`
 `);
 
 /**
- * `myTokens` ist im Schema nullable, und das ist keine Nachlässigkeit: über ein Personal
- * Access Token antwortet das Feld `null` statt die ganze Anfrage scheitern zu lassen. Diese
- * Seite läuft über die Browser-Tür, sieht also immer eine Liste — die Unterscheidung steht
- * hier trotzdem, weil `null` und „keine Tokens" zwei verschiedene Sachverhalte sind und die
- * Seite den ersten nicht als den zweiten darstellen darf.
+ * `myTokens` is nullable in the schema, and that is not sloppiness: through a Personal Access
+ * Token the field answers `null` instead of failing the whole request. This page runs through
+ * the browser door and therefore always sees a list — the distinction is written out anyway,
+ * because `null` and "no tokens" are two different facts and the page must not present the
+ * first as the second.
  */
 export const load: PageServerLoad = async () => {
 	const data = await backendRequest(MyTokens);
@@ -59,8 +59,8 @@ export const actions: Actions = {
 		const description = String(form.get('description') ?? '');
 		const rawDays = String(form.get('expiresInDays') ?? '').trim();
 
-		// Die Gültigkeit wird im Backend geprüft, nicht hier — hier wird nur übersetzt, was
-		// ein Formularfeld liefert. Eine zweite Grenze in der GUI wäre eine zweite Wahrheit.
+		// The lifetime is checked in the backend, not here — here only what a form field delivers
+		// is translated. A second limit in the GUI would be a second truth.
 		const expiresInDays = rawDays === '' ? null : Number(rawDays);
 		if (expiresInDays !== null && !Number.isInteger(expiresInDays)) {
 			return fail(400, {
@@ -72,9 +72,9 @@ export const actions: Actions = {
 
 		try {
 			const data = await backendRequest(CreateToken, { description, expiresInDays });
-			// Das Klartext-Token wandert genau einmal hierher zurück und wird nirgends
-			// gespeichert — nicht in der Session, nicht in einem Cookie, nicht im Log. Wer es
-			// verliert, legt ein neues an und widerruft dieses.
+			// The plaintext token comes back here exactly once and is stored nowhere — not in the
+			// session, not in a cookie, not in the log. Anybody who loses it creates a new one
+			// and revokes this one.
 			return { created: data.createPersonalAccessToken };
 		} catch (error) {
 			const refusal = toRefusal(error);

@@ -2,24 +2,24 @@ import { test as base, expect, type Page } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 
 /**
- * Die Personen, mit denen die E2E-Tests arbeiten.
+ * The people the end-to-end tests work with.
  *
- * Namensgleich mit `internal/testdata` im Backend, damit ein Szenario in beiden Repos
- * dieselbe Besetzung hat: wer im Go-Test die Eigentümerin des Wunsches ist, ist es hier auch.
- * Ohne das liest man einen fehlgeschlagenen E2E-Test und muss erst rekonstruieren, welche
- * Adresse eigentlich die interessante war.
+ * The same names as `internal/testdata` in the backend, so that a scenario has the same cast in
+ * both repositories: whoever owns the wish in the Go test owns it here too. Without that you
+ * read a failed end-to-end test and first have to reconstruct which address was the interesting
+ * one.
  *
- * Alles erfunden, alles unter `example.org` (RFC 2606). Dieses Repo ist öffentlich — hier
- * steht nie der Name einer echten Kollegin.
+ * All invented, all under `example.org` (RFC 2606). This repository is public — the name of a
+ * real colleague never appears here.
  */
 export const PERSONAS = {
-	/** Eigentümerin des Datensatzes, für den getestet wird. */
+	/** Owner of the record under test. */
 	eins: { mail: 'prof.eins@example.org', name: 'Prof. Eins' },
-	/** Unbeteiligte Kollegin — die Person, vor der die Wunsch-Vertraulichkeit schützt. */
+	/** An uninvolved colleague — the person wish confidentiality protects against. */
 	zwei: { mail: 'prof.zwei@example.org', name: 'Prof. Zwei' },
-	/** Planerin: sieht Wünsche vor der Veröffentlichung, weil der Prozess es verlangt. */
+	/** A planner: sees wishes before publication, because the process requires it. */
 	vier: { mail: 'prof.vier@example.org', name: 'Prof. Vier' },
-	/** Verwaltet Personen und Rollen — und liest bewusst keine Wünsche. */
+	/** Administers people and roles — and deliberately reads no wishes. */
 	sechs: { mail: 'admin@example.org', name: 'Admin' }
 } as const;
 
@@ -27,29 +27,28 @@ export type Persona = (typeof PERSONAS)[keyof typeof PERSONAS];
 
 type Fixtures = {
 	/**
-	 * Meldet den Browser-Kontext als diese Person an.
+	 * Signs the browser context in as this person.
 	 *
-	 * Setzt `X-Remote-User` so, wie es in der Produktion **Caddy → oauth2-proxy** tut. Der
-	 * Test spielt hier den Proxy, nicht den Client: eingehende `X-Remote-*` verwirft Caddy,
-	 * ein Browser kann sich damit also nicht selbst anmelden. Genau deshalb steht der Header
-	 * in einer Fixture und nicht verstreut in den Specs — sonst liest sich irgendwann
-	 * jemand zusammen, dass die GUI Identität vom Client entgegennimmt.
+	 * Sets `X-Remote-User` the way **Caddy → oauth2-proxy** does in production. The test plays
+	 * the proxy here, not the client: Caddy discards incoming `X-Remote-*`, so a browser cannot
+	 * sign itself in with it. That is exactly why the header lives in a fixture and not
+	 * scattered through the specs — otherwise somebody eventually concludes that the GUI accepts
+	 * identity from the client.
 	 */
 	asPersona: (persona: Persona) => Promise<Page>;
 
-	/** Barrierefreiheitsprüfung für die aktuelle Seite. */
+	/** Accessibility check for the current page. */
 	checkA11y: (page: Page) => Promise<void>;
 };
 
 /**
- * Regeln, die aktuell verletzt werden und deshalb nicht blockieren.
+ * Rules that are currently violated and therefore do not block.
  *
- * Diese Liste ist eine Schuld, keine Konfiguration. Jeder Eintrag braucht eine Begründung und
- * gehört wieder entfernt, sobald er behoben ist; `tests/a11y.spec.ts` führt für jeden Eintrag
- * zusätzlich einen als `fixme` markierten Test, damit die offene Stelle in jedem Bericht
- * namentlich auftaucht statt lautlos zu verschwinden.
+ * This list is a debt, not a configuration. Every entry needs a reason and belongs removed as
+ * soon as it is fixed; `tests/a11y.spec.ts` additionally carries a `fixme`-marked test for each
+ * entry, so that the open finding is named in every report instead of vanishing silently.
  *
- * Zurzeit leer — `color-contrast` stand hier und ist behoben.
+ * Currently empty — `color-contrast` used to be here and is fixed.
  */
 export const KNOWN_A11Y_DEBT: readonly string[] = [];
 
@@ -73,26 +72,24 @@ export const test = base.extend<Fixtures>({
 		}
 	},
 
-	// Playwright liest die Fixture-Abhängigkeiten aus dem Destrukturierungsmuster des ersten
-	// Parameters und lehnt alles andere ab — ein benannter Parameter ist hier ein Laufzeit-
-	// fehler, kein Stilfrage. Diese Fixture braucht keine Abhängigkeiten, also bleibt das
-	// Muster leer.
+	// Playwright reads the fixture dependencies from the destructuring pattern of the first
+	// parameter and rejects anything else — a named parameter is a runtime error here, not a
+	// question of style. This fixture needs no dependencies, so the pattern stays empty.
 	// eslint-disable-next-line no-empty-pattern
 	checkA11y: async ({}, use) => {
 		await use(async (page: Page) => {
 			const results = await new AxeBuilder({ page })
-				// WCAG 2.1 AA. Die Hochschule ist eine öffentliche Stelle: Barrierefreiheit ist
-				// hier keine Kür, sondern BayEGovG/BITV — und im Nachhinein nachzurüsten ist
-				// deutlich teurer, als es von Anfang an im Gate zu haben.
+				// WCAG 2.1 AA. The university is a public body: accessibility is not optional here
+				// but BayEGovG/BITV — and retrofitting it afterwards is considerably more
+				// expensive than having it in the gate from the start.
 				.withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
 				.disableRules([...KNOWN_A11Y_DEBT])
 				.analyze();
 
 			expect(
 				results.violations,
-				// Die Standardmeldung ist ein Objekt-Dump. Diese Zusammenfassung sagt, welche
-				// Regel wo verletzt ist — der Unterschied zwischen "CI ist rot" und "ich weiß,
-				// was ich reparieren muss".
+				// The default message is an object dump. This summary says which rule is violated
+				// where — the difference between "CI is red" and "I know what to fix".
 				results.violations
 					.map(
 						(v) =>
@@ -113,11 +110,11 @@ export const test = base.extend<Fixtures>({
 export { expect };
 
 /**
- * Wartet, bis die Seite serverseitig gerendert ist.
+ * Waits until the page has been rendered server-side.
  *
- * `waitForLoadState('networkidle')` wäre das Naheliegende und ist hier falsch: die App hat
- * keine Hintergrund-Requests, `networkidle` wartet also nur eine feste Zeit ab und macht die
- * Suite langsam, ohne etwas zu garantieren.
+ * `waitForLoadState('networkidle')` would be the obvious thing and is wrong here: the app has no
+ * background requests, so `networkidle` merely waits out a fixed period and makes the suite slow
+ * without guaranteeing anything.
  */
 export async function gotoRendered(page: Page, path: string): Promise<void> {
 	await page.goto(path, { waitUntil: 'domcontentloaded' });
@@ -125,29 +122,27 @@ export async function gotoRendered(page: Page, path: string): Promise<void> {
 }
 
 /**
- * Öffnet ein daisyUI-Dropdown und wartet, bis es wirklich sichtbar ist.
+ * Opens a daisyUI dropdown and waits until it is actually visible.
  *
- * Nicht `.click()` allein. Das Dropdown blendet über `opacity` ein und ist im Markup die
- * ganze Zeit vorhanden — Playwrights `toBeVisible()` sieht Deckkraft nicht an, meldet also
- * schon „sichtbar", während das Menü noch durchsichtig ist.
+ * Not `.click()` alone. The dropdown fades in via `opacity` and is present in the markup the
+ * whole time — Playwright's `toBeVisible()` does not look at opacity, so it reports "visible"
+ * while the menu is still transparent.
  *
- * Für axe ist das fatal und auf eine irreführende Weise: es misst die Farben durch das
- * halbtransparente Element hindurch, findet ausgewaschene Werte und meldet
- * Kontrastverletzungen, die es gar nicht gibt. Der Test wird also rot, und zwar mit einer
- * Begründung, die nach einem echten Fehler in der Oberfläche aussieht.
+ * For axe that is fatal, and in a misleading way: it measures the colours through the
+ * half-transparent element, finds washed-out values and reports contrast violations that do not
+ * exist. The test goes red with a justification that looks like a real defect in the interface.
  */
 export async function openDropdown(page: Page, name: string | RegExp): Promise<void> {
 	const trigger = page.getByRole('button', { name });
 	await trigger.click();
 
-	// Vom Auslöser aus zum zugehörigen Inhalt, nicht `.dropdown-content` global: die Leiste
-	// hat zwei Dropdowns (Bereiche und Themewahl), und `.first()` erwischte verlässlich das
-	// falsche — der Helper wartete dann auf ein Menü, das niemand geöffnet hatte, und lief in
-	// den Timeout.
+	// From the trigger to its own content, not `.dropdown-content` globally: the bar has two
+	// dropdowns (areas and theme choice), and `.first()` reliably caught the wrong one — the
+	// helper then waited for a menu nobody had opened and ran into the timeout.
 	const content = trigger.locator('..').locator('.dropdown-content');
 	await expect
 		.poll(() => content.evaluate((el) => Number(getComputedStyle(el).opacity)), {
-			message: `Das Dropdown "${name}" ist nicht sichtbar geworden.`,
+			message: `The dropdown "${name}" did not become visible.`,
 			timeout: 5_000
 		})
 		.toBe(1);

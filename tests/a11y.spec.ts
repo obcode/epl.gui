@@ -2,59 +2,58 @@ import AxeBuilder from '@axe-core/playwright';
 import { test, expect, KNOWN_A11Y_DEBT, PERSONAS, gotoRendered, openDropdown } from './fixtures';
 
 /**
- * Barrierefreiheit, automatisiert geprüft.
+ * Accessibility, checked automatically.
  *
- * Die Hochschule ist eine öffentliche Stelle — BayEGovG und BITV 2.0 gelten, das ist keine
- * Kür. Und diese Prüfung gehört an den Anfang: axe findet Kontrast- und Rollenfehler, die
- * einzeln je zwei Minuten kosten und in einer fertigen Oberfläche mit sieben Bereichen ein
- * eigenes Projekt werden.
+ * The university is a public body — BayEGovG and BITV 2.0 apply, this is not optional. And the
+ * check belongs at the start: axe finds contrast and role defects that cost two minutes each
+ * individually and become a project of their own in a finished interface with seven areas.
  *
- * Automatisierte Prüfung fängt ungefähr ein Drittel der realen Probleme. Sie ersetzt keinen
- * Tastaturdurchlauf — deshalb steht dieser hier daneben und nicht anstelle.
+ * Automated checking catches roughly a third of the real problems. It does not replace a
+ * keyboard pass — which is why one stands next to it here rather than instead of it.
  */
-test.describe('Barrierefreiheit', () => {
-	test('Startseite, anonym', async ({ page, checkA11y }) => {
+test.describe('accessibility', () => {
+	test('start page, anonymous', async ({ page, checkA11y }) => {
 		await gotoRendered(page, '/');
 		await checkA11y(page);
 	});
 
-	test('Startseite, angemeldet', async ({ asPersona, checkA11y }) => {
-		// Angemeldet ist ein anderes Markup: die Identität in der Leiste, andere Karteninhalte.
+	test('start page, signed in', async ({ asPersona, checkA11y }) => {
+		// Signed in is different markup: the identity in the bar, different card contents.
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/');
 		await checkA11y(page);
 	});
 
-	test('mit offenem Theme-Menü', async ({ page, checkA11y }) => {
-		// Dropdowns sind der klassische Fundort: ein `tabindex` auf einem nicht-interaktiven
-		// Element, ein fehlendes `aria-label`. Zugeklappt prüft axe das Menü gar nicht.
+	test('with the theme menu open', async ({ page, checkA11y }) => {
+		// Dropdowns are the classic place to find them: a `tabindex` on a non-interactive
+		// element, a missing `aria-label`. Collapsed, axe does not check the menu at all.
 		await gotoRendered(page, '/');
 		await openDropdown(page, /Design/);
 		await checkA11y(page);
 	});
 
-	test('mobil, mit offenem Bereichsmenü', async ({ page, checkA11y }) => {
-		// Unter 768px trägt der Hamburger die Navigation. Das ist anderes Markup als die
-		// Leiste darüber und wird von der Desktop-Prüfung nie angefasst.
+	test('mobile, with the area menu open', async ({ page, checkA11y }) => {
+		// Below 768px the hamburger carries the navigation. That is different markup from the bar
+		// above it and is never touched by the desktop check.
 		await page.setViewportSize({ width: 375, height: 812 });
 		await gotoRendered(page, '/');
 		await openDropdown(page, 'Bereiche');
 		await checkA11y(page);
 	});
 
-	// Für jede Regel aus KNOWN_A11Y_DEBT ein eigener Test, damit die offene Stelle namentlich
-	// in jedem Bericht auftaucht. `fixme` heißt: bekannt, nicht behoben, blockiert nicht —
-	// im Gegensatz zu `skip`, das auch für "läuft hier nicht" steht und deshalb übersehen wird.
+	// One test of its own for every rule in KNOWN_A11Y_DEBT, so that the open finding is named
+	// in every report. `fixme` means: known, not fixed, does not block — unlike `skip`, which
+	// also stands for "does not run here" and is therefore overlooked.
 	//
-	// Wer das repariert, entfernt den Eintrag aus KNOWN_A11Y_DEBT und dieses `fixme`; ab dann
-	// bewacht die reguläre Prüfung die Regel mit.
+	// Whoever fixes one removes the entry from KNOWN_A11Y_DEBT and this `fixme`; from then on the
+	// regular check guards the rule.
 	for (const rule of KNOWN_A11Y_DEBT) {
-		test(`offen: ${rule}`, async ({ page }) => {
+		test(`open: ${rule}`, async ({ page }) => {
 			test.fixme(
 				true,
-				`${rule} ist auf der Startseite verletzt. Bei color-contrast betrifft das die ` +
-					`Statustöne text-base-content/60, /45 und /35 aus CLAUDE.md — eine ` +
-					`Entscheidung über die Design-Tokens, keine einzelne kaputte Stelle.`
+				`${rule} is violated on the start page. For color-contrast that concerns the ` +
+					`status tones text-base-content/60, /45 and /35 from CLAUDE.md — a decision ` +
+					`about the design tokens, not a single broken spot.`
 			);
 
 			await gotoRendered(page, '/');
@@ -63,11 +62,11 @@ test.describe('Barrierefreiheit', () => {
 		});
 	}
 
-	test('die Seite ist per Tastatur bedienbar', async ({ page }) => {
+	test('the page is operable by keyboard', async ({ page }) => {
 		await gotoRendered(page, '/');
 
-		// Kein axe-Thema: axe prüft Markup, nicht Fokusreihenfolge. Hier geht es nur um die
-		// Grundzusicherung, dass Tab überhaupt irgendwo landet und nicht in einer Falle endet.
+		// Not an axe subject: axe checks markup, not focus order. All this is about is the basic
+		// assurance that Tab lands somewhere at all and does not end in a trap.
 		await page.keyboard.press('Tab');
 
 		const focused = await page.evaluate(() => {
@@ -75,7 +74,7 @@ test.describe('Barrierefreiheit', () => {
 			return el ? `${el.tagName.toLowerCase()}` : null;
 		});
 
-		test.expect(focused, 'nach dem ersten Tab ist nichts fokussiert').not.toBe(null);
+		test.expect(focused, 'nothing is focused after the first Tab').not.toBe(null);
 		test.expect(focused).not.toBe('body');
 	});
 });

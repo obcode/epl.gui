@@ -3,10 +3,9 @@
 
 	let { endpoint }: { endpoint: string } = $props();
 
-	// Das Token lebt in dieser Komponente und nirgends sonst: kein localStorage, kein Cookie,
-	// keine URL. Ein Feld, in das jemand eine Zugangsdatei tippt, darf sie nicht überleben —
-	// und ein „merken"-Häkchen wäre der erste Schritt zu einem Token im Browserprofil eines
-	// geteilten Rechners.
+	// The token lives in this component and nowhere else: no localStorage, no cookie, no URL. A
+	// field somebody types a credential into must not outlive it — and a "remember me" tick
+	// would be the first step towards a token in the browser profile of a shared machine.
 	let token = $state('');
 	let query = $state(EXAMPLE_QUERY);
 	let result = $state('');
@@ -19,10 +18,10 @@
 		result = '';
 
 		try {
-			// Direkt gegen die Token-Tür, nicht über einen Proxy dieser Anwendung. Das ist der
-			// ganze Zweck: die Konsole soll zeigen, was ein Skript sieht — inklusive der
-			// `null`-Antworten auf @interactiveOnly-Feldern. Ein Proxy würde mit der
-			// Browser-Identität sprechen und damit mehr zeigen, als das Token kann.
+			// Straight at the token door, not through a proxy of this application. That is the
+			// whole point: the console should show what a script sees — including the `null`
+			// answers on @interactiveOnly fields. A proxy would speak with the browser identity
+			// and therefore show more than the token can.
 			const response = await fetch(endpoint, {
 				method: 'POST',
 				headers: {
@@ -36,8 +35,8 @@
 			try {
 				result = JSON.stringify(JSON.parse(text), null, 2);
 			} catch {
-				// Kein JSON: dann ist die Antwort selbst der Befund — eine HTML-Loginseite etwa
-				// heißt, dass der Aufruf in der falschen Tür gelandet ist.
+				// Not JSON: then the response is itself the finding — an HTML login page, for
+				// instance, means the call ended up at the wrong door.
 				result = text;
 			}
 			failed = !response.ok;

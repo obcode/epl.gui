@@ -1,11 +1,10 @@
 <script lang="ts">
 	import { page } from '$app/state';
 
-	// Die Fehlerseite *innerhalb* des Rahmens: eine Seite hat nicht geladen, die Anwendung als
-	// solche schon. Der andere Fall — jemand ist bei Tallox überhaupt nicht eingetragen —
-	// scheitert eine Ebene höher, im Layout selbst, und landet deshalb in src/error.html.
-	// SvelteKit rendert für einen Fehler im Root-Layout kein +error.svelte, weil dessen Rahmen
-	// genau das ist, was fehlgeschlagen ist.
+	// The error page *inside* the frame: a page failed to load, the application itself did not.
+	// The other case — somebody is not registered in Tallox at all — fails one level up, in the
+	// layout itself, and therefore ends in src/error.html. SvelteKit renders no +error.svelte
+	// for an error in the root layout, because that layout is the thing that failed.
 	const forbidden = $derived(page.status === 403);
 </script>
 

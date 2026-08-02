@@ -1,10 +1,10 @@
 /**
- * Die Beispiele auf der API-Seite, als Funktionen der Endpunkt-URL.
+ * The examples on the API page, as functions of the endpoint URL.
  *
- * Nicht als Text im Markup, aus zwei Gründen. Die URL unterscheidet sich zwischen
- * Entwicklung und Produktion, und ein hartkodierter Hostname in einem öffentlichen Repository
- * wäre ohnehin nicht erlaubt. Und: ein Beispiel, das jemand zum Kopieren anbietet, sollte
- * geprüft sein — hier reicht dafür ein Modultest, im Markup bräuchte es einen Browsertest.
+ * Not as text in the markup, for two reasons. The URL differs between development and
+ * production, and a hard-coded hostname in a public repository would not be allowed anyway.
+ * And an example offered for copying ought to be checked — here a module test is enough, in
+ * markup it would take a browser test.
  */
 
 export type Example = {
@@ -15,12 +15,11 @@ export type Example = {
 };
 
 /**
- * Die Beispielabfrage ist bewusst `me`.
+ * The example query is deliberately `me`.
  *
- * Sie beantwortet die einzige Frage, die man am Anfang hat — funktioniert mein Token, und als
- * wen gelte ich damit — und sie funktioniert, bevor es irgendwelche Fachdaten gibt. Ein
- * Beispiel, das Daten braucht, die im leeren System nicht existieren, ist ein Beispiel, das
- * beim ersten Versuch scheitert.
+ * It answers the only question anybody has at the start — does my token work, and who am I
+ * with it — and it works before there is any domain data at all. An example that needs data
+ * which does not exist in an empty system is an example that fails on the first try.
  */
 export const EXAMPLE_QUERY = '{ me { mail name roles } }';
 
@@ -68,18 +67,18 @@ request("${endpoint}") |>
 }
 
 /**
- * Die Endpunkt-URL für Token-Aufrufe, abgeleitet aus der Browser-URL des Backends.
+ * The endpoint URL for token calls, derived from the backend's browser URL.
  *
- * `PUBLIC_TALLOX_SERVER` zeigt auf die Browser-Tür (`…/query`); die Token-Tür ist derselbe
- * Host mit einem anderen Pfad. Abgeleitet statt zusätzlich konfiguriert: eine zweite Variable
- * wäre eine zweite Stelle, die falsch stehen kann — und in Produktion würde man es erst
- * merken, wenn eine Kollegin die kopierte URL benutzt.
+ * `PUBLIC_TALLOX_SERVER` points at the browser door (`…/query`); the token door is the same
+ * host with a different path. Derived rather than configured separately: a second variable
+ * would be a second place that can be wrong — and in production it would only be noticed when
+ * a colleague uses the URL she copied.
  */
 export function tokenEndpoint(publicServerUrl: string): string {
 	const base = publicServerUrl.trim().replace(/\/+$/, '');
 	if (base === '') return '/api/graphql';
 
-	// Mit oder ohne /query am Ende — beides kommt vor, je nachdem, was jemand in die
-	// Umgebung geschrieben hat.
+	// With or without a trailing /query — both occur, depending on what somebody wrote into
+	// the environment.
 	return `${base.replace(/\/query$/, '')}/api/graphql`;
 }

@@ -1,35 +1,35 @@
 /**
- * Themes und ihre Persistenz.
+ * Themes and how they persist.
  *
- * Warum ein Cookie und nicht localStorage (also nicht `theme-change`): die App rendert
- * serverseitig. Bei localStorage kennt der Server das Theme nicht, liefert das Default-Markup
- * aus, und erst nach dem ersten Skript flippt die Seite ins gewählte Theme — ein sichtbares
- * Aufblitzen bei *jedem* Full Load. Ein Cookie liegt dem SSR-Request bei, also steht das
- * richtige `data-theme` schon im ersten Byte.
+ * Why a cookie and not localStorage (so: not `theme-change`): the app renders on the server.
+ * With localStorage the server does not know the theme, ships the default markup, and only
+ * after the first script does the page flip to the chosen theme — a visible flash on *every*
+ * full load. A cookie travels with the SSR request, so the right `data-theme` is in the first
+ * byte.
  *
- * Diese Datei ist bewusst frei von Svelte und Browser-APIs, damit die Auswahllogik in vitest
- * geprüft werden kann.
+ * Deliberately free of Svelte and browser APIs, so the selection logic can be checked in
+ * vitest.
  */
 
-/** Nicht `theme`: ein generischer Cookie-Name kollidiert auf derselben Domain mit anderem. */
+/** Not `theme`: a generic cookie name collides with something else on the same domain. */
 export const THEME_COOKIE = 'tallox_theme';
 
-/** Ein Jahr. Eine Themewahl ist eine Vorliebe, keine Sitzung. */
+/** One year. Choosing a theme is a preference, not a session. */
 export const THEME_COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
 
 /**
- * „System" ist kein daisyUI-Theme, sondern die Abwesenheit einer Wahl: ohne `data-theme` greifen
- * die in app.css mit `--default` und `--prefersdark` markierten Themes, und die Seite folgt
- * damit der Einstellung des Betriebssystems.
+ * "System" is not a daisyUI theme but the absence of a choice: without `data-theme` the themes
+ * marked `--default` and `--prefersdark` in app.css take effect, and the page follows the
+ * operating system's setting.
  */
 export const SYSTEM_THEME = 'system';
 
 /**
- * Kuratierte Auswahl. daisyUI bringt über 30 Themes mit; alle anzubieten ist eine Liste zum
- * Scrollen statt einer Entscheidung.
+ * A curated selection. daisyUI ships more than 30 themes; offering all of them is a list to
+ * scroll rather than a decision.
  *
- * MUSS mit der `themes:`-Liste in app.css übereinstimmen — dort wird das CSS erzeugt, hier
- * nur ausgewählt. Ein Eintrag, den app.css nicht kennt, schaltet sichtbar auf nichts um.
+ * MUST match the `themes:` list in app.css — that is where the CSS is generated, here it is
+ * only selected. An entry app.css does not know about visibly switches to nothing.
  */
 export const THEMES = [
 	{ value: 'nord', label: 'Nord', dark: false },
@@ -50,11 +50,11 @@ export type ThemeName = (typeof THEMES)[number]['value'];
 export type ThemeChoice = ThemeName | typeof SYSTEM_THEME;
 
 /**
- * Cookie-Wert zu einer gültigen Wahl machen.
+ * Turns a cookie value into a valid choice.
  *
- * Der Rückgabewert landet unescaped im `<html>`-Tag. Deshalb ist das hier eine Allowlist und
- * kein Escaping: was nicht in THEMES steht, wird zu `system` — ein Angreifer, der den Cookie
- * setzt, kann damit nichts in das Markup schreiben.
+ * The return value ends up unescaped in the `<html>` tag. That is why this is an allowlist and
+ * not escaping: anything not in THEMES becomes `system`, so an attacker who sets the cookie
+ * cannot write anything into the markup with it.
  */
 export function resolveTheme(value: string | undefined | null): ThemeChoice {
 	if (!value) return SYSTEM_THEME;
@@ -62,8 +62,8 @@ export function resolveTheme(value: string | undefined | null): ThemeChoice {
 }
 
 /**
- * Das Attribut für das `<html>`-Tag — bei `system` bewusst der leere String, denn nur ohne
- * `data-theme` greifen `--default` und `--prefersdark`.
+ * The attribute for the `<html>` tag — for `system` deliberately the empty string, because
+ * `--default` and `--prefersdark` only take effect without a `data-theme`.
  */
 export function themeAttribute(choice: ThemeChoice): string {
 	return choice === SYSTEM_THEME ? '' : `data-theme="${choice}"`;

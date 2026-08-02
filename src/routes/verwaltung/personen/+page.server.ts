@@ -44,16 +44,16 @@ const SetPersonActiveDocument = graphql(`
 `);
 
 /**
- * Die Personenliste.
+ * The list of people.
  *
- * `people` ist `@interactiveOnly` und ADMIN-only, also liefert das Backend hier entweder die
- * Liste oder eine Ablehnung. Die Ablehnung wird als 403 weitergereicht und nicht abgefangen:
- * wer diese Seite ohne die Rolle aufruft, soll den Grund sehen und nicht eine leere Tabelle,
- * die aussieht, als gäbe es niemanden im System. Eine leere Liste und „Du darfst das nicht"
- * sind verschiedene Auskünfte, und die erste ist die beunruhigendere.
+ * `people` is `@interactiveOnly` and ADMIN-only, so the backend answers here with either the
+ * list or a refusal. The refusal is passed on as a 403 rather than caught: somebody opening
+ * this page without the role should see the reason, not an empty table that looks as though
+ * there were nobody in the system. An empty list and "you may not do this" are different
+ * answers, and the first is the more alarming one.
  *
- * 403 statt des rohen Fehlers, damit `+error.svelte` einen Satz zeigt statt eines Stacktrace —
- * und mit dem Text des Backends, der auf der Allowlist in graphqlError.ts steht.
+ * A 403 rather than the raw error, so that `+error.svelte` shows a sentence instead of a stack
+ * trace — and with the backend's text, which is on the allowlist in graphqlError.ts.
  */
 export const load: PageServerLoad = async ({ url }) => {
 	const search = url.searchParams.get('q') ?? '';
@@ -71,12 +71,11 @@ export const load: PageServerLoad = async ({ url }) => {
 };
 
 /**
- * Schreibende Aktionen als Form Actions und nicht als /gui-api-Proxys.
+ * Writing actions as form actions rather than as /gui-api proxies.
  *
- * Sie gehören zu genau dieser Seite und werden von nichts anderem gebraucht, und als Formulare
- * funktionieren sie ohne Javascript — was für den Bildschirm, auf dem der Zugang zum System
- * verwaltet wird, die richtige Eigenschaft ist. `/gui-api/` bleibt für das, was mehrere Seiten
- * teilen.
+ * They belong to this page and nothing else needs them, and as forms they work without
+ * JavaScript — the right property for the screen on which access to the system is
+ * administered. `/gui-api/` stays for what several pages share.
  */
 export const actions: Actions = {
 	create: async ({ request }) => {
@@ -84,8 +83,8 @@ export const actions: Actions = {
 		const mail = String(form.get('mail') ?? '').trim();
 		const name = String(form.get('name') ?? '').trim();
 
-		// Die eigentliche Prüfung steht im Backend (domain.ValidateMail) und gilt für beide
-		// Türen. Hier nur der Fall, für den ein Roundtrip zu schade ist.
+		// The real check is in the backend (domain.ValidateMail) and applies to both doors. Only
+		// the case a round trip would be a waste on is handled here.
 		if (mail === '') {
 			return fail(400, { error: 'Bitte eine Mailadresse angeben.' });
 		}
@@ -102,15 +101,15 @@ export const actions: Actions = {
 		const form = await request.formData();
 		const id = String(form.get('id') ?? '');
 
-		// Der ganze Satz, nicht Zu- und Abgänge: das ist es, was der Bildschirm zeigt, und
-		// add/remove verliert gegen ein Rennen, sobald zwei Leute dieselbe Person offen haben.
+		// The whole set, not additions and removals: that is what the screen shows, and
+		// add/remove loses a race as soon as two people have the same person open.
 		const roles = form
 			.getAll('roles')
 			.map(String)
 			.filter((role): role is Role => (ALL_ROLES as readonly string[]).includes(role));
 
-		// Eine Befristung gilt nur für die Rollen, die NEU dazukommen — so steht es im Schema.
-		// „DEANS_OFFICE bis heute Abend" ist damit ein Vorgang und nicht zwei.
+		// An expiry applies only to the roles being ADDED — that is what the schema says. So
+		// "DEANS_OFFICE until this evening" is one operation and not two.
 		const until = String(form.get('expiresAt') ?? '').trim();
 		let expiresAt: string | null = null;
 		if (until !== '') {
@@ -137,9 +136,9 @@ export const actions: Actions = {
 		try {
 			await backendRequest(SetPersonActiveDocument, { id, active });
 		} catch (error) {
-			// Hierher kommt unter anderem LAST_ADMIN. Der Satz stammt vom Backend und steht auf
-			// der Allowlist in graphqlError.ts — er erklärt, was zu tun ist, und das ist an
-			// dieser Stelle mehr wert als eine generische Formulierung.
+			// LAST_ADMIN arrives here, among others. The sentence comes from the backend and is on
+			// the allowlist in graphqlError.ts — it explains what to do, and that is worth more
+			// here than a generic phrasing.
 			return fail(400, { error: toRefusal(error).message });
 		}
 		return { saved: id };

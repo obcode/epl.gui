@@ -7,9 +7,9 @@
 	type VersionTag = {
 		label: string;
 		value: string;
-		/** Steht im title: Commit und Bauzeitpunkt werden genau einmal gebraucht — wenn nach
-		 * einem Deploy die Frage im Raum steht, ob wirklich das neue Image läuft — und wären
-		 * in der Zeile sonst dauerhaft Rauschen. */
+		/** Goes into the title: the commit and the build time are needed exactly once — when the
+		 * question after a deploy is whether the new image is really running — and would be
+		 * permanent noise in the line otherwise. */
 		detail: string;
 		url: string | null;
 		reachable: boolean;
@@ -44,10 +44,10 @@
 
 {#snippet versionTag(tag: VersionTag)}
 	{#if tag.url}
-		<!-- Der einzige externe Link der App. `resolve()` ist hier falsch — es löst interne
-		     Routen auf; das Ziel liegt auf github.com. Die Regel kann das an einem dynamischen
-		     href nicht sehen, deshalb hier punktuell aus. Gebaut wird die URL ausschließlich in
-		     releaseUrl(), aus einer Version, die gegen ein Muster geprüft ist. -->
+		<!-- The app's only external link. `resolve()` is wrong here — it resolves internal
+		     routes, and this target is on github.com. The lint rule cannot see that on a dynamic
+		     href, so it is switched off for this one spot. The URL is built exclusively in
+		     releaseUrl(), from a version checked against a pattern. -->
 		<!-- eslint-disable svelte/no-navigation-without-resolve -->
 		<a
 			href={tag.url}
@@ -61,11 +61,11 @@
 		</a>
 		<!-- eslint-enable svelte/no-navigation-without-resolve -->
 	{:else}
-		<!-- Kein Link: die Version gehört zu keinem Release (lokaler Build, `dev`, oder das
-		     Backend antwortet nicht). Siehe releaseUrl(). -->
-		<!-- Kein `text-error`: als Textfarbe auf base-100 unterschreitet es auf hellen Themes
-		     4.5:1. Den Zustand trägt hier ohnehin das „—" und der title; halbfett genügt als
-		     Hervorhebung und ist von der Themewahl unabhängig. -->
+		<!-- No link: the version belongs to no release (a local build, `dev`, or the backend is
+		     not answering). See releaseUrl(). -->
+		<!-- No `text-error`: as a text colour on base-100 it falls below 4.5:1 on the light
+		     themes. The state is carried by the "—" and the title anyway; semibold is enough
+		     emphasis and is independent of the chosen theme. -->
 		<span title={tag.detail} class:font-semibold={!tag.reachable}>
 			{tag.label}
 			{tag.value}

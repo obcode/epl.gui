@@ -1,10 +1,10 @@
 import type { BuildInfoQuery } from '$lib/gql/__generated__/graphql';
 
 /**
- * Der Versionsstempel des Backends, wie ihn der Footer anzeigt.
+ * The backend's version stamp, as the footer shows it.
  *
- * Aus dem generierten Query-Typ abgeleitet statt von Hand geschrieben: so kann er nicht vom
- * Schema abweichen. Und er steht hier und nicht in `$lib/server/`, weil eine Komponente ihn
- * importiert — alles unter `$lib/server/` ist für Client-Code gesperrt.
+ * Derived from the generated query type rather than written by hand, so it cannot diverge from
+ * the schema. And it lives here rather than in `$lib/server/` because a component imports it —
+ * everything under `$lib/server/` is off limits to client code.
  */
 export type ServerBuildInfo = BuildInfoQuery['buildInfo'];

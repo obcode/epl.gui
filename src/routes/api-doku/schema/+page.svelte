@@ -37,9 +37,9 @@
 				<span class="badge badge-ghost badge-sm">{type.kind}</span>
 			</h2>
 
-			<!-- Absätze statt whitespace-pre-line: die Umbrüche im Schema sitzen dort, wo der
-			     Quelltext umbricht, nicht wo der Browser umbrechen würde. describeBlocks()
-			     macht daraus wieder Absätze; die Leerzeile zwischen zweien bleibt eine Aussage. -->
+			<!-- Paragraphs rather than whitespace-pre-line: the breaks in the schema sit where the
+			     source wraps, not where the browser would. describeBlocks() turns them back into
+			     paragraphs; the blank line between two of them stays a statement. -->
 			{#each describeBlocks(type.description) as block, index (index)}
 				{#if block.kind === 'code'}
 					<pre class="bg-base-200 mt-2 overflow-x-auto rounded p-2 text-xs">{block.text}</pre>

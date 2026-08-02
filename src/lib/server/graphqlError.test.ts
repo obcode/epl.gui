@@ -1,13 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { GENERIC_MESSAGE, httpStatusOf, toRefusal } from './graphqlError';
 
-/** So wirft graphql-request: ein Error mit einer `response.errors`-Liste. */
+/** This is how graphql-request throws: an Error carrying a `response.errors` list. */
 function clientError(errors: unknown[]): unknown {
 	return Object.assign(new Error('GraphQL Error'), { response: { errors } });
 }
 
 describe('toRefusal', () => {
-	it('reicht bekannte Ablehnungen im Wortlaut durch', () => {
+	it('passes known refusals through verbatim', () => {
 		const refusal = toRefusal(
 			clientError([
 				{
@@ -23,10 +23,10 @@ describe('toRefusal', () => {
 		});
 	});
 
-	it('ersetzt unbekannte Fehler durch einen allgemeinen Satz', () => {
-		// Die Regel aus CLAUDE.md: keine rohen Backend-Fehlertexte auf Schreibpfaden. Eine
-		// durchgereichte Unique-Verletzung verriete später, dass sich schon jemand
-		// eingetragen hat — deshalb eine Allowlist und keine Denylist.
+	it('replaces unknown errors with a generic sentence', () => {
+		// The rule from CLAUDE.md: no raw backend error strings on write paths. A uniqueness
+		// violation passed through would later reveal that somebody has already registered —
+		// hence an allowlist and not a denylist.
 		const refusal = toRefusal(
 			clientError([
 				{
@@ -41,9 +41,9 @@ describe('toRefusal', () => {
 		expect(refusal.message).not.toContain('unique');
 	});
 
-	it('behält den Code, verwirft aber den Text eines unbekannten Codes', () => {
-		// Der Code hilft beim Suchen im Log; der Text ist von niemandem für Anzeige geprüft
-		// worden.
+	it('keeps the code but discards the text of an unknown code', () => {
+		// The code helps when searching the log; the text has not been reviewed by anybody for
+		// display.
 		const refusal = toRefusal(
 			clientError([{ message: 'table "person" does not exist', extensions: { code: 'INTERNAL' } }])
 		);
@@ -52,14 +52,14 @@ describe('toRefusal', () => {
 		expect(refusal.message).toBe(GENERIC_MESSAGE);
 	});
 
-	it('kommt mit allem zurecht, was kein GraphQL-Fehler ist', () => {
-		// Ein Netzwerkfehler wirft etwas ganz anderes, und auch dann muss ein anzeigbarer Satz
-		// herauskommen statt „undefined" auf der Seite.
+	it('copes with anything that is not a GraphQL error', () => {
+		// A network failure throws something else entirely, and even then a displayable sentence
+		// has to come out rather than "undefined" on the page.
 		for (const thrown of [
 			new Error('fetch failed'),
 			undefined,
 			null,
-			'kaputt',
+			'broken',
 			{ response: {} },
 			{ response: { errors: 'nope' } },
 			clientError([]),
@@ -71,41 +71,41 @@ describe('toRefusal', () => {
 		}
 	});
 
-	it('nimmt die erste verwertbare Ablehnung', () => {
+	it('takes the first usable refusal', () => {
 		const refusal = toRefusal(
 			clientError([
 				{ message: 'Nicht angemeldet.', extensions: { code: 'UNAUTHENTICATED' } },
-				{ message: 'egal', extensions: { code: 'TOKEN_NOT_FOUND' } }
+				{ message: 'never mind', extensions: { code: 'TOKEN_NOT_FOUND' } }
 			])
 		);
 
 		expect(refusal.code).toBe('UNAUTHENTICATED');
 	});
 
-	it('vertraut einem bekannten Code ohne Text nicht', () => {
+	it('does not trust a known code with no text', () => {
 		const refusal = toRefusal(clientError([{ extensions: { code: 'TOKEN_NOT_FOUND' } }]));
 		expect(refusal.message).toBe(GENERIC_MESSAGE);
 	});
 });
 
 describe('httpStatusOf', () => {
-	it('liest den Status aus einem ClientError', () => {
+	it('reads the status out of a ClientError', () => {
 		expect(httpStatusOf({ response: { status: 401, errors: [] } })).toBe(401);
 		expect(httpStatusOf({ response: { status: 503, errors: [] } })).toBe(503);
 	});
 
-	it('liefert undefined, wenn gar keine Antwort kam', () => {
-		// Ein Netzwerkfehler hat keinen Status, und der Unterschied zu einer Ablehnung ist
-		// genau der: „das Backend hat nein gesagt" gegen „das Backend hat nichts gesagt".
+	it('returns undefined when no answer arrived at all', () => {
+		// A network failure has no status, and that is exactly the difference from a refusal: "the
+		// backend said no" against "the backend said nothing".
 		expect(httpStatusOf(new Error('fetch failed'))).toBeUndefined();
 		expect(httpStatusOf(undefined)).toBeUndefined();
 		expect(httpStatusOf({ response: {} })).toBeUndefined();
 	});
 
-	it('trennt „kein Konto" von „kann gerade niemanden prüfen"', () => {
-		// Beide Ablehnungen aus internal/auth tragen denselben Code UNAUTHENTICATED — der
-		// Unterschied steckt allein im Status. Ohne diese Unterscheidung wird ein Deploy zu
-		// einer Welle von Leuten, die glauben, ihr Zugang sei weg.
+	it('separates "no account" from "cannot check anybody right now"', () => {
+		// Both refusals from internal/auth carry the same code UNAUTHENTICATED — the difference
+		// sits in the status alone. Without that distinction a deploy turns into a wave of people
+		// who believe their access is gone.
 		const noAccount = {
 			response: { status: 401, errors: [{ extensions: { code: 'UNAUTHENTICATED' } }] }
 		};

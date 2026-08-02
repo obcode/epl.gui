@@ -10,26 +10,26 @@ import {
 } from './roles';
 
 describe('ROLE_LABELS', () => {
-	it('übersetzt jede Rolle, die es gibt', () => {
-		// Die Zuordnung Englisch → Fakultätssprache steht an genau zwei Stellen: im
-		// Doc-Kommentar von policy.Role und hier. Eine fehlende Übersetzung würde in der
-		// Oberfläche als LECTURER auftauchen, was für niemanden ein Wort ist.
+	it('translates every role there is', () => {
+		// The mapping from English to the faculty's vocabulary lives in exactly two places: the
+		// doc comment on policy.Role and here. A missing translation would surface in the
+		// interface as LECTURER, which is not a word to anybody.
 		for (const role of ALL_ROLES) {
 			expect(ROLE_LABELS[role], role).toBeTruthy();
 			expect(ROLE_HINTS[role], role).toBeTruthy();
 		}
 	});
 
-	it('lässt eine unbekannte Rolle unübersetzt durch, statt sie zu verschlucken', () => {
-		// Wenn das Backend eine Rolle bekommt, die diese Version der GUI noch nicht kennt, ist
-		// sie roh anzuzeigen besser als sie wegzulassen: eine Verwaltung, die eine vergebene
-		// Rolle nicht anzeigt, behauptet, jemand habe sie nicht.
+	it('passes an unknown role through untranslated rather than swallowing it', () => {
+		// When the backend has a role this version of the GUI does not know yet, showing it raw
+		// beats leaving it out: an administration screen that does not display a granted role is
+		// claiming somebody does not hold it.
 		expect(roleLabel('FUTURE_ROLE')).toBe('FUTURE_ROLE');
 	});
 });
 
 describe('sortRoles', () => {
-	it('sortiert in die Reihenfolge von ALL_ROLES', () => {
+	it('sorts into the order of ALL_ROLES', () => {
 		expect(sortRoles(['ADMIN', 'LECTURER', 'DEANS_OFFICE'])).toEqual([
 			'LECTURER',
 			'DEANS_OFFICE',
@@ -37,16 +37,16 @@ describe('sortRoles', () => {
 		]);
 	});
 
-	it('hängt Unbekanntes hinten an, statt es zu verlieren', () => {
+	it('appends unknown values rather than losing them', () => {
 		expect(sortRoles(['FUTURE_ROLE', 'LECTURER'])).toEqual(['LECTURER', 'FUTURE_ROLE']);
 	});
 });
 
 describe('displayName', () => {
-	it('zeigt die Adresse, solange kein Name da ist', () => {
-		// Der Normalfall und kein Fehler: angelegt wird mit der Adresse allein, weil sie das
-		// Einzige ist, was stimmen muss. Einen Namen aus ihr abzuleiten würde raten, wie Leute
-		// sich selbst schreiben, und läge bei jedem Titel und jedem Umlaut daneben.
+	it('shows the address as long as there is no name', () => {
+		// The normal case and not an error: people are created with the address alone, because it
+		// is the only thing that has to be right. Deriving a name from it would guess at how
+		// people write themselves, and be wrong for every title and every umlaut.
 		expect(displayName({ mail: 'prof.eins@example.org', name: '' })).toBe('prof.eins@example.org');
 		expect(displayName({ mail: 'prof.eins@example.org', name: null })).toBe(
 			'prof.eins@example.org'
@@ -56,16 +56,16 @@ describe('displayName', () => {
 		);
 	});
 
-	it('zeigt den Namen, sobald es einen gibt', () => {
+	it('shows the name as soon as there is one', () => {
 		expect(displayName({ mail: 'prof.eins@example.org', name: 'Prof. Eins' })).toBe('Prof. Eins');
 	});
 });
 
 describe('mayPreviewRoles', () => {
-	it('bietet die Vorschau nur der Administration an', () => {
-		// Nicht aus Sicherheitsgründen — die Verengung kann per Konstruktion nichts hinzufügen.
-		// Eine Studiengangsleitung hält zwei Rollen und hat trotzdem keinen Anlass, einen Knopf
-		// zu sehen, der ihren Bedarfsbereich verschwinden lässt.
+	it('offers the preview to administrators only', () => {
+		// Not for security reasons — narrowing cannot add anything by construction. A study
+		// programme lead holds two roles and still has no reason to see a button that makes her
+		// demand area disappear.
 		expect(mayPreviewRoles(['LECTURER'])).toBe(false);
 		expect(mayPreviewRoles(['LECTURER', 'PROGRAMME_LEAD'])).toBe(false);
 		expect(mayPreviewRoles(['DEANS_OFFICE', 'LECTURER'])).toBe(false);
@@ -73,10 +73,10 @@ describe('mayPreviewRoles', () => {
 		expect(mayPreviewRoles(['LECTURER', 'ADMIN'])).toBe(true);
 	});
 
-	it('fragt die gehaltenen Rollen, nicht die effektiven', () => {
-		// Der Punkt der Signatur: eine Administration, die sich gerade auf LECTURER verengt
-		// hat, wirkt nicht mehr als ADMIN — hielte man sich an die effektiven Rollen, wäre das
-		// Menü genau dann weg, wenn man es zum Zurückkommen braucht.
+	it('asks the held roles, not the effective ones', () => {
+		// The point of the signature: an administrator currently narrowed to LECTURER no longer
+		// acts as ADMIN — going by the effective roles, the menu would be gone exactly when it is
+		// needed to get back.
 		const granted = ['LECTURER', 'ADMIN'];
 		const effectiveWhileNarrowed = ['LECTURER'];
 

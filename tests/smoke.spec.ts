@@ -1,77 +1,77 @@
 import { test, expect, gotoRendered } from './fixtures';
 
 /**
- * Der Rauchtest. Läuft gegen einen echten Stack: SvelteKit-SSR → GraphQL-Backend → PostgreSQL.
+ * The smoke test. Runs against a real stack: SvelteKit SSR → GraphQL backend → PostgreSQL.
  *
- * Was er absichert, prüft kein Unit-Test: dass die drei Teile zusammen überhaupt antworten.
- * Die häufigste Art, wie das bricht, ist keine kaputte Komponente, sondern eine falsche
- * `TALLOX_SERVER`-URL — und deren Symptom ist eine Seite, die rendert, aber überall leer ist.
+ * What it secures is checked by no unit test: that the three parts answer together at all. The
+ * commonest way that breaks is not a broken component but a wrong `TALLOX_SERVER` URL — and its
+ * symptom is a page that renders but is empty everywhere.
  */
-test.describe('Startseite', () => {
-	test('rendert und nennt sich beim Namen', async ({ page }) => {
+test.describe('start page', () => {
+	test('renders and calls itself by name', async ({ page }) => {
 		await gotoRendered(page, '/');
 
 		await expect(page.getByRole('heading', { name: 'Einsatzplanung', level: 1 })).toBeVisible();
 		await expect(page.getByRole('banner').getByText('Tallox', { exact: true })).toBeVisible();
 	});
 
-	test('erreicht das Backend und zeigt dessen Version', async ({ page }) => {
+	test('reaches the backend and shows its version', async ({ page }) => {
 		await gotoRendered(page, '/');
 
-		// Die Karte sagt "Nicht erreichbar", wenn der SSR-Hop scheitert. Genau dieser Fall ist
-		// der interessante: die Seite rendert dann trotzdem, und ohne diese Zusicherung wäre
-		// ein E2E-Lauf gegen ein totes Backend grün.
+		// The card says "Nicht erreichbar" when the SSR hop fails. That is exactly the
+		// interesting case: the page still renders, and without this assertion an end-to-end run
+		// against a dead backend would be green.
 		const backendCard = page
 			.locator('div')
 			.filter({ hasText: /^🔌 Backend/ })
 			.last();
 		await expect(backendCard).not.toContainText('Nicht erreichbar');
 
-		// Der Footer bekommt seine Serverversion über denselben Weg. Bewusst nicht auf eine
-		// Versionsnummer geprüft: ein lokal gebautes Backend meldet "dev", weil die Version
-		// per ldflags erst beim Release gesetzt wird. Interessant ist nur das "—", denn das
-		// bedeutet, die Antwort war leer statt fehlerhaft — ein anderer Fehler als ein
-		// unerreichbares Backend, und einer, den die Karte oben nicht zeigt.
+		// The footer gets its server version by the same route. Deliberately not checked against
+		// a version number: a locally built backend reports "dev", because the version is only
+		// set via ldflags at release time. The interesting thing is the "—", because that means
+		// the answer was empty rather than faulty — a different failure from an unreachable
+		// backend, and one the card above does not show.
 		const footer = page.getByRole('contentinfo');
 		await expect(footer).toContainText(/Server\s+\S+/);
 		await expect(footer).not.toContainText('Server —');
 	});
 
-	test('liefert eine vollständig ersetzte app.html aus', async ({ page }) => {
-		// Aus Schaden klug: ein Kommentar in app.html, der einen sveltekit-Platzhalter im
-		// Fließtext erwähnte, hat dessen Ersetzung auf sich gezogen. Das Stylesheet landete im
-		// Kommentar, der echte Platzhalter blieb als sichtbarer Text im <head> stehen — und
-		// weil Text dort ungültig ist, beendete der Browser den Kopf und zeigte
-		// "%sveltekit.head%" oben links auf jeder Seite. Die Anwendung war unformatiert.
+	test('serves a fully substituted app.html', async ({ page }) => {
+		// Learned the hard way: a comment in app.html that mentioned a sveltekit placeholder in
+		// its prose attracted the substitution. The stylesheet ended up inside the comment, the
+		// real placeholder stayed as visible text in the <head> — and because text is invalid
+		// there, the browser closed the head and showed "%sveltekit.head%" in the top left of
+		// every page. The application was unstyled.
 		//
-		// Kein einziger der übrigen Tests hat das bemerkt: sie prüfen Inhalt und Verhalten,
-		// und beides funktionierte weiter. Deshalb hier zwei stumpfe, aber wirksame Zusicherungen.
+		// Not one of the other tests noticed: they check content and behaviour, and both kept
+		// working. Hence these two blunt but effective assertions.
 		const response = await page.goto('/');
 		const html = await response!.text();
 
 		const leftover = html.match(/%sveltekit\.[a-z]+%|%tallox\.[a-z]+%/i);
 		expect(
 			leftover?.[0],
-			`app.html enthält einen nicht ersetzten Platzhalter (${leftover?.[0]}). ` +
-				`Häufigste Ursache: derselbe Platzhalter wird weiter oben in einem Kommentar ` +
-				`erwähnt und fängt die Ersetzung ab.`
+			`app.html contains an unsubstituted placeholder (${leftover?.[0]}). ` +
+				`Commonest cause: the same placeholder is mentioned in a comment further up and ` +
+				`intercepts the substitution.`
 		).toBeUndefined();
 
-		// Ohne Stylesheet rendert die Seite weiter und liest sich in einem Test unauffällig —
-		// sie sieht nur zerschossen aus. Das ist genau der Schaden, den obiger Fehler anrichtete.
+		// Without a stylesheet the page still renders and reads as unremarkable in a test — it
+		// just looks wrecked. That is exactly the damage the defect above caused.
 		await expect(page.locator('head link[rel="stylesheet"]')).not.toHaveCount(0);
 	});
 
-	test('meldet einen Health-Check ohne jede Identität', async ({ request }) => {
-		// Direkt gegen das Backend, ohne Browser und ohne Header. /healthz muss antworten,
-		// bevor Datenbank, Auth-Proxy oder Session existieren — Container-Healthcheck und
-		// deploy/smoketest hängen daran. Läge es je hinter der Auth-Middleware, würde sich
-		// jedes Deployment auf einem gesunden Server selbst zurückrollen.
+	test('answers a health check with no identity at all', async ({ request }) => {
+		// Straight at the backend, without a browser and without headers. /healthz has to answer
+		// before the database, the auth proxy or a session exist — the container health check and
+		// deploy/smoketest hang on it. Were it ever behind the auth middleware, every deployment
+		// would roll itself back on a healthy server.
 		const backend = process.env.TALLOX_SERVER ?? 'http://localhost:8080/query';
 		const health = new URL('/healthz', backend).toString();
 
 		const response = await request.get(health);
-		expect(response.ok(), `GET ${health} antwortete mit ${response.status()}`).toBe(true);
+		expect(response.ok(), `GET ${health} answered with ${response.status()}`).toBe(true);
 		expect(await response.json()).toMatchObject({ status: 'ok' });
 	});
 });

@@ -2,52 +2,51 @@ import { describe, expect, it } from 'vitest';
 import { ACCOUNT_ITEMS, isActive, NAV_ITEMS, visibleNavItems } from './navigation';
 
 describe('isActive', () => {
-	it('markiert die Startseite nur bei genau /', () => {
+	it('marks the start page only on exactly /', () => {
 		const start = { emoji: '🏠', label: 'Start', href: '/' as const, hint: '' };
 		expect(isActive(start, '/')).toBe(true);
 		expect(isActive(start, '/module')).toBe(false);
 	});
 
-	it('markiert Bereiche ohne Route nie', () => {
+	it('never marks areas that have no route', () => {
 		expect(isActive({ emoji: '📚', label: 'Module', hint: '' }, '/module')).toBe(false);
 	});
 });
 
 describe('NAV_ITEMS', () => {
-	it('hat zu jedem Eintrag ein Emoji und einen Hinweis', () => {
+	it('has an emoji and a hint for every entry', () => {
 		for (const item of NAV_ITEMS) {
 			expect(item.emoji, item.label).not.toBe('');
 			expect(item.hint, item.label).not.toBe('');
 		}
 	});
 
-	it('vergibt jedes Label nur einmal', () => {
+	it('uses every label only once', () => {
 		const labels = NAV_ITEMS.map((i) => i.label);
 		expect(new Set(labels).size).toBe(labels.length);
 	});
 });
 
 describe('ACCOUNT_ITEMS', () => {
-	it('hat für jeden Eintrag ein Ziel', () => {
-		// Anders als bei NAV_ITEMS gibt es hier keine „entsteht noch"-Einträge: das Kontomenü
-		// zeigt Werkzeuge, die es gibt, und ein toter Eintrag darin wäre nur ein Klick ins
-		// Leere.
+	it('has a destination for every entry', () => {
+		// Unlike NAV_ITEMS there are no "still to come" entries here: the account menu shows tools
+		// that exist, and a dead entry in it would just be a click into nothing.
 		for (const item of ACCOUNT_ITEMS) {
 			expect(item.href).toBeTruthy();
 			expect(item.hint).toBeTruthy();
 		}
 	});
 
-	it('überschneidet sich nicht mit der Bereichsleiste', () => {
-		// Zwei Wege zum selben Ziel in einer Navigation heißt, dass einer von beiden falsch
-		// aussieht, sobald einer aktiv markiert ist.
+	it('does not overlap with the area bar', () => {
+		// Two ways to the same destination in one navigation means one of them looks wrong as
+		// soon as the other is marked active.
 		const areas = new Set(NAV_ITEMS.map((item) => item.href).filter(Boolean));
 		for (const item of ACCOUNT_ITEMS) {
 			expect(areas.has(item.href)).toBe(false);
 		}
 	});
 
-	it('markiert Unterseiten als aktiv', () => {
+	it('marks sub-pages as active', () => {
 		const tokens = ACCOUNT_ITEMS.find((item) => item.href === '/konto/tokens')!;
 		expect(isActive(tokens, '/konto/tokens')).toBe(true);
 
@@ -58,12 +57,12 @@ describe('ACCOUNT_ITEMS', () => {
 });
 
 describe('visibleNavItems', () => {
-	it('zeigt Einträge ohne Rollenangabe allen', () => {
+	it('shows entries with no role requirement to everybody', () => {
 		const items = [{ emoji: '🏠', label: 'Start', href: '/' as const, hint: 'x' }];
 		expect(visibleNavItems(items, [])).toEqual(items);
 	});
 
-	it('blendet aus, wofür die Rolle fehlt', () => {
+	it('hides what the role is missing for', () => {
 		const items = [
 			{ emoji: '📊', label: 'Statistik', hint: 'x', roles: ['DEANS_OFFICE'] as const },
 			{ emoji: '✋', label: 'Wünsche', hint: 'x' }
@@ -75,7 +74,7 @@ describe('visibleNavItems', () => {
 		]);
 	});
 
-	it('reicht eine der genannten Rollen', () => {
+	it('accepts any one of the named roles', () => {
 		const items = [
 			{
 				emoji: '🧩',
@@ -87,10 +86,10 @@ describe('visibleNavItems', () => {
 		expect(visibleNavItems(items, ['PROGRAMME_LEAD'])).toHaveLength(1);
 	});
 
-	it('zeigt die Verwaltung nur der Administration', () => {
-		// Kosmetik, kein Riegel — der steht in policy.MayAdministerPeople und gilt auch für die
-		// Token-Tür. Trotzdem geprüft: wer den Eintrag sieht und bei jedem Klick eine Ablehnung
-		// bekommt, lernt, Ablehnungen zu ignorieren.
+	it('shows the administration area to administrators only', () => {
+		// Cosmetic, not a lock — that is in policy.MayAdministerPeople and applies to the token
+		// door too. Checked anyway: somebody who sees the entry and gets a refusal on every click
+		// learns to ignore refusals.
 		const labels = (roles: string[]) => visibleNavItems(ACCOUNT_ITEMS, roles).map((i) => i.label);
 		expect(labels(['LECTURER'])).not.toContain('Verwaltung');
 		expect(labels(['ADMIN'])).toContain('Verwaltung');

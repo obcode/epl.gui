@@ -1,32 +1,31 @@
 /**
- * Was von einem fehlgeschlagenen Backend-Aufruf beim Benutzer ankommen darf.
+ * What may reach the user from a failed backend call.
  *
- * Das Backend liefert Ablehnungen als GraphQL-Fehler mit `extensions.code` und einem
- * deutschen Satz. Der **Code** ist der Vertrag zwischen den beiden Repos; der Satz ist die
- * Hälfte, die jemand nach einer Support-Frage umformuliert. Diese Datei liest deshalb den
- * Code und reicht den Satz nur durch — sie trifft keine Entscheidung anhand des Textes.
+ * The backend delivers refusals as GraphQL errors with an `extensions.code` and a German
+ * sentence. The **code** is the contract between the two repositories; the sentence is the
+ * half somebody rewords after a support question. This file therefore reads the code and only
+ * passes the sentence through — it makes no decision based on the text.
  *
- * Und sie ist die Stelle, an der die Regel aus CLAUDE.md hängt: **keine rohen
- * Backend-Fehlertexte auf Schreibpfaden**. Alles, was nicht als bewusst formulierte Ablehnung
- * erkennbar ist, wird zu einem generischen Satz — eine durchgereichte
- * Unique-Constraint-Verletzung verrät sonst, dass sich schon jemand eingetragen hat.
+ * And it is where the rule from CLAUDE.md hangs: **no raw backend error strings on write
+ * paths**. Anything not recognisable as a deliberately worded refusal becomes a generic
+ * sentence — a uniqueness violation passed through verbatim would otherwise reveal that
+ * somebody has already registered.
  */
 
-/** Eine Ablehnung, wie die Seite sie anzeigt. */
+/** A refusal, in the shape the page displays it. */
 export type BackendRefusal = {
-	/** Maschinenlesbarer Code aus `extensions.code`, oder `UNKNOWN`. */
+	/** The machine-readable code from `extensions.code`, or `UNKNOWN`. */
 	code: string;
-	/** Satz für die Anzeige. Deutsch, vom Backend oder von hier. */
+	/** The sentence to display. German, from the backend or from here. */
 	message: string;
 };
 
 /**
- * Codes, deren Text wir vom Backend übernehmen.
+ * The codes whose text we take from the backend.
  *
- * Eine Allowlist und keine Denylist: ein Fehler ohne bekannten Code ist per Definition einer,
- * über den niemand nachgedacht hat, und genau dessen Text darf nicht auf die Seite. Neue
- * Codes wandern bewusst hier hinein — das ist der Moment, in dem jemand liest, was der Text
- * verrät.
+ * An allowlist and not a denylist: an error with no known code is by definition one nobody has
+ * thought about, and its text is exactly the one that must not reach the page. New codes are
+ * added here deliberately — that is the moment somebody reads what the text gives away.
  */
 const PASS_THROUGH = new Set([
 	'INTERACTIVE_ONLY',
@@ -35,9 +34,9 @@ const PASS_THROUGH = new Set([
 	'TOKEN_LIFETIME_OUT_OF_RANGE',
 	'TOKEN_NOT_FOUND',
 	'UNAUTHENTICATED',
-	// Die Verwaltung. Anders als beim Wunsch-Schreibpfad verrät hier nichts etwas: wer diese
-	// Sätze zu sehen bekommt, sitzt vor einer Liste, die ohnehin alle Personen zeigt.
-	// „Diese Person gibt es schon" ist dort schlicht die nützlichere Auskunft.
+	// Administration. Unlike the wish write path nothing here gives anything away: whoever
+	// gets to see these sentences is looking at a list that shows every person anyway.
+	// "This person already exists" is simply the more useful answer there.
 	'FORBIDDEN',
 	'LAST_ADMIN',
 	'INVALID_MAIL',
@@ -49,7 +48,7 @@ const PASS_THROUGH = new Set([
 	'GRANT_EXPIRY_OUT_OF_RANGE'
 ]);
 
-/** Was angezeigt wird, wenn der Fehler keiner der bekannten ist. */
+/** What is shown when the error is none of the known ones. */
 export const GENERIC_MESSAGE = 'Das hat nicht geklappt. Bitte später erneut versuchen.';
 
 type GraphQLErrorish = {
@@ -58,11 +57,11 @@ type GraphQLErrorish = {
 };
 
 /**
- * Übersetzt einen von `backendRequest` geworfenen Fehler in etwas Anzeigbares.
+ * Translates an error thrown by `backendRequest` into something displayable.
  *
- * graphql-request wirft einen `ClientError` mit `response.errors`; ein Netzwerkfehler wirft
- * etwas ganz anderes. Beides landet hier, und beides muss zu einem Satz führen, den man einer
- * Kollegin zeigen kann.
+ * graphql-request throws a `ClientError` carrying `response.errors`; a network failure throws
+ * something else entirely. Both end up here, and both have to become a sentence you can show
+ * to a colleague.
  */
 export function toRefusal(error: unknown): BackendRefusal {
 	for (const entry of graphqlErrors(error)) {
@@ -73,8 +72,8 @@ export function toRefusal(error: unknown): BackendRefusal {
 			return { code, message };
 		}
 		if (code) {
-			// Bekannter Code, unbekannter Text (oder umgekehrt): der Code hilft beim Suchen im
-			// Log, der Text bleibt generisch.
+			// Known code, unknown text (or the other way round): the code helps when searching
+			// the log, the text stays generic.
 			return { code, message: GENERIC_MESSAGE };
 		}
 	}
@@ -82,14 +81,12 @@ export function toRefusal(error: unknown): BackendRefusal {
 }
 
 /**
- * Der HTTP-Status, unter dem das Backend abgelehnt hat — oder `undefined`, wenn es gar nicht
- * geantwortet hat.
+ * The HTTP status the backend refused under — or `undefined` when it did not answer at all.
  *
- * Nötig, weil die Ablehnungen aus `internal/auth` alle denselben Code `UNAUTHENTICATED`
- * tragen und der Unterschied zwischen „für diese Kennung gibt es kein Konto" (401) und „ich
- * kann gerade niemanden prüfen, die Datenbank startet neu" (503) genau im Status steckt.
- * Ohne diese Unterscheidung wird ein Deploy zu einer Welle von Leuten, die glauben, ihr
- * Zugang sei weg.
+ * Needed because the refusals from `internal/auth` all carry the same code `UNAUTHENTICATED`,
+ * and the difference between "there is no account for this login" (401) and "I cannot check
+ * anybody right now, the database is restarting" (503) sits exactly in the status. Without
+ * that distinction a deploy turns into a wave of people who believe their access is gone.
  */
 export function httpStatusOf(error: unknown): number | undefined {
 	if (!error || typeof error !== 'object') return undefined;
@@ -97,7 +94,7 @@ export function httpStatusOf(error: unknown): number | undefined {
 	return typeof status === 'number' ? status : undefined;
 }
 
-/** Holt die GraphQL-Fehlerliste aus dem, was graphql-request geworfen hat. */
+/** Digs the GraphQL error list out of whatever graphql-request threw. */
 function graphqlErrors(error: unknown): GraphQLErrorish[] {
 	if (!error || typeof error !== 'object') return [];
 

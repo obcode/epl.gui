@@ -33,16 +33,15 @@ const DiagnoseDocument = graphql(`
 `);
 
 /**
- * Die Antwort auf „warum sieht Kollegin X das nicht".
+ * The answer to "why does my colleague not see this".
  *
- * Das Feld ist `@interactiveOnly` — über ein Personal Access Token liefert es `null`. Die
- * API-Konsole unter /api-doku geht bewusst durch die Token-Tür und kann es deshalb nicht
- * zeigen; ohne diese Seite gäbe es in Produktion gar keinen Weg, es zu benutzen. Genau das
- * war beim ersten Anlauf der Fall.
+ * The field is `@interactiveOnly` — through a Personal Access Token it answers `null`. The API
+ * console under /api-doku deliberately goes through the token door and therefore cannot show
+ * it; without this page there would be no way to use it in production at all. That was exactly
+ * the situation on the first attempt.
  *
- * Die Adresse steht in der URL und nicht in einem POST: das ist eine Abfrage, kein Vorgang,
- * und ein Link auf eine konkrete Diagnose ist genau das, was man in eine Supportantwort
- * kopiert.
+ * The address is in the URL rather than in a POST: this is a query, not an operation, and a
+ * link to a specific diagnosis is precisely what one pastes into a support reply.
  */
 export const load: PageServerLoad = async ({ url }) => {
 	const mail = (url.searchParams.get('mail') ?? '').trim();
@@ -52,8 +51,8 @@ export const load: PageServerLoad = async ({ url }) => {
 
 	try {
 		const data = await backendRequest(DiagnoseDocument, { mail });
-		// `null` heißt „diese Installation kennt die Adresse nicht" — und das ist bei dieser
-		// Frage oft schon die ganze Antwort. Deshalb ein Zustand der Seite und kein Fehler.
+		// `null` means "this installation does not know the address" — and for this question that
+		// is often the whole answer. Hence a state of the page rather than an error.
 		return { mail, diagnosis: data.diagnoseAccess ?? null };
 	} catch (err) {
 		error(403, toRefusal(err).message);

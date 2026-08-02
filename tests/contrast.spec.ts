@@ -15,19 +15,19 @@ async function expectNoContrastViolations(page: Page, theme: string): Promise<vo
 }
 
 /**
- * Misst den Kontrast eines Elements gegen seinen eigenen Hintergrund selbst, nach WCAG 2.1.
+ * Measures an element's contrast against its own background directly, to WCAG 2.1.
  *
- * Warum von Hand und nicht mit axe: daisyUI legt auf den markierten Menüeintrag zusätzlich zur
- * Hintergrundfarbe ein `background-image` (`--fx-noise`, ein Data-URI-SVG). Für axe ist ein
- * Element mit Hintergrundbild nicht entscheidbar — die Regel meldet es als `incomplete`, nicht
- * als `violation`. Eine Prüfung auf `results.violations` ist an dieser Stelle also blind, und
- * zwar lautlos: sie bleibt grün, auch wenn dort dunkel auf dunkel steht. Genau das war der
- * Fall, und genau deshalb reicht die axe-Prüfung oben hier nicht.
+ * Why by hand and not with axe: on the marked menu entry daisyUI puts a `background-image`
+ * (`--fx-noise`, a data-URI SVG) on top of the background colour. For axe an element with a
+ * background image is undecidable — the rule reports it as `incomplete`, not as `violation`. A
+ * check on `results.violations` is therefore blind at this spot, and silently so: it stays green
+ * even when what is there is dark on dark. That was exactly the case, and exactly why the axe
+ * check above is not enough here.
  *
- * Die Farben werden über ein 1×1-Canvas nach sRGB aufgelöst statt aus dem Text von
- * `getComputedStyle` geparst: die Themes sind in `oklch` notiert, und die serialisierte
- * Rechenform ist je nach Farbraum `rgb()`, `oklch()` oder `color(...)`. Der Browser kann das
- * ohnehin besser umrechnen als ein regulärer Ausdruck.
+ * The colours are resolved to sRGB through a 1×1 canvas rather than parsed out of the text of
+ * `getComputedStyle`: the themes are written in `oklch`, and the serialised computed form is
+ * `rgb()`, `oklch()` or `color(...)` depending on the colour space. The browser converts that
+ * better than a regular expression can anyway.
  */
 async function contrastRatio(page: Page, selector: string): Promise<number> {
 	return page.locator(selector).evaluate((node) => {
@@ -57,28 +57,28 @@ async function contrastRatio(page: Page, selector: string): Promise<number> {
 }
 
 /**
- * Kontrast über **alle** angebotenen Themes.
+ * Contrast across **all** the themes on offer.
  *
- * Die Prüfung in a11y.spec.ts sieht nur das Standard-Theme. Das genügt hier nicht: Kontrast
- * ist in dieser App keine Eigenschaft einer Komponente, sondern des Paares aus Komponente und
- * Theme. Zwölf Themes stehen zur Wahl, jedes bringt eigene Farbwerte mit, und ein Wert, der
- * auf `nord` bequem passt, kann auf `winter` durchfallen — gemessen: `base-content` bei 70 %
- * Deckkraft ergibt auf `nord` 4.59:1 und auf `winter` 3.87:1.
+ * The check in a11y.spec.ts only sees the default theme. That is not enough here: in this app
+ * contrast is not a property of a component but of the pair (component, theme). Twelve themes
+ * are on offer, each brings its own colour values, and a value that fits comfortably on `nord`
+ * can fail on `winter` — measured: `base-content` at 70 % opacity gives 4.59:1 on `nord` and
+ * 3.87:1 on `winter`.
  *
- * Genau das hat die erste Fassung dieser Oberfläche verletzt, gleich zweifach:
+ * That is exactly what the first version of this interface violated, twice over:
  *
- *  1. Die gedämpften Töne lagen bei 35 % bis 70 % Deckkraft. Erst ab 80 % hält *jedes* Theme
- *     die 4.5:1 aus WCAG 1.4.3 ein, deshalb gibt es nur noch die Stufen 100/90/80.
- *  2. `text-error` und `text-warning` standen als Textfarbe auf `base-100`. Die semantischen
- *     daisyUI-Farben sind aber Hintergrundfarben — als Text erreichen sie auf den hellen
- *     Themes 1.35:1 bis 3.5:1. Als Badge-Hintergrund werden sie mit ihrer `*-content`-Farbe
- *     gepaart, und dieses Paar ist auf Kontrast ausgelegt.
+ *  1. The muted tones sat between 35 % and 70 % opacity. Only from 80 % does *every* theme hold
+ *     the 4.5:1 of WCAG 1.4.3, which is why the scale is now 100/90/80 and nothing else.
+ *  2. `text-error` and `text-warning` were used as text colours on `base-100`. But daisyUI's
+ *     semantic colours are background colours — as text they reach 1.35:1 to 3.5:1 on the light
+ *     themes. As a badge background they are paired with their `*-content` colour, and that pair
+ *     is built for contrast.
  *
- * Die Hochschule ist eine öffentliche Stelle; BayEGovG und BITV 2.0 gelten. Ein Theme, das
- * die Anwendung unlesbar macht, ist deshalb kein Schönheitsfehler — und da die Themeliste
- * kuratiert ist, ist „dann nimm ein anderes" keine Antwort, sondern eine Einladung.
+ * The university is a public body; BayEGovG and BITV 2.0 apply. A theme that makes the
+ * application unreadable is therefore not a blemish — and since the theme list is curated,
+ * "then pick another one" is not an answer but an invitation.
  */
-test.describe('Kontrast über alle Themes', () => {
+test.describe('contrast across all themes', () => {
 	for (const theme of THEMES) {
 		test(`${theme.label} (${theme.value})`, async ({ page, context }) => {
 			await context.addCookies([
@@ -87,7 +87,7 @@ test.describe('Kontrast über alle Themes', () => {
 
 			await gotoRendered(page, '/');
 
-			// Das Theme muss wirklich anliegen, sonst prüfen zwölf Tests zwölfmal dasselbe.
+			// The theme has to be genuinely applied, or twelve tests check the same thing twelve times.
 			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
 
 			await expectNoContrastViolations(page, theme.value);
@@ -96,60 +96,59 @@ test.describe('Kontrast über alle Themes', () => {
 });
 
 /**
- * Dieselbe Prüfung mit **offenen** Menüs — und das ist keine Fleißaufgabe.
+ * The same check with the menus **open** — and that is not busywork.
  *
- * a11y.spec.ts klappt die beiden Menüs auf, aber nur im Standard-Theme; contrast.spec.ts
- * durchläuft alle zwölf Themes, sah sie aber nur zugeklappt. In der Lücke dazwischen lag ein
- * echter Befund: der markierte Eintrag (die aktuelle Seite in der Bereichsnavigation, das
- * gewählte Theme in der Designwahl) bekommt von daisyUI `neutral` als Hintergrund. Der
- * Menü-Kontrast-Block in app.css drehte die Vordergrundfarbe pauschal auf `base-content`
- * zurück — auf `nord` unauffällig, weil dort beides hell auf dunkel ist, und auf **allen
- * hellen Themes** dunkel auf dunkel, also unlesbar.
+ * a11y.spec.ts opens both menus, but only in the default theme; contrast.spec.ts walks all
+ * twelve themes but only ever saw them closed. In the gap between the two lay a real finding:
+ * the marked entry (the current page in the area navigation, the chosen theme in the design
+ * picker) gets `neutral` as a background from daisyUI. The menu contrast block in app.css turned
+ * the foreground colour flatly back to `base-content` — unremarkable on `nord`, because both are
+ * light on dark there, and dark on dark on **every light theme**, so unreadable.
  *
- * Der markierte Eintrag ist genau die Stelle, an der man sich verortet. Unterhalb von 1024px
- * läuft außerdem die gesamte Navigation über dieses Menü.
+ * The marked entry is precisely where one locates oneself. Below 1024px the entire navigation
+ * additionally runs through this menu.
  *
- * Die axe-Prüfung allein hätte den Befund **nicht** gefunden, auch mit offenem Menü nicht:
- * daisyUI legt auf den markierten Eintrag ein `background-image`, und damit meldet axe ihn als
- * `incomplete` statt als `violation`. Deshalb misst `contrastRatio()` hier zusätzlich selbst —
- * siehe die Begründung dort. Nachgestellt: mit dem alten app.css blieben alle zwölf
- * axe-Läufe grün, während der Eintrag auf den hellen Themes unlesbar war.
+ * The axe check alone would **not** have found it, not even with the menu open: daisyUI puts a
+ * `background-image` on the marked entry, and axe therefore reports it as `incomplete` rather
+ * than as `violation`. Which is why `contrastRatio()` additionally measures for itself here —
+ * see the reasoning there. Reproduced: with the old app.css all twelve axe runs stayed green
+ * while the entry was unreadable on the light themes.
  */
-test.describe('Kontrast bei offenen Menüs, über alle Themes', () => {
+test.describe('contrast with menus open, across all themes', () => {
 	for (const theme of THEMES) {
 		test(`${theme.label} (${theme.value})`, async ({ page, context }) => {
 			await context.addCookies([
 				{ name: THEME_COOKIE, value: theme.value, url: 'http://localhost:4173' }
 			]);
 
-			// Unter lg trägt der Hamburger die Navigation, und dort ist auf `/` der Eintrag
-			// „Start" markiert — der Fall, um den es geht. Die Designwahl bringt ihren
-			// markierten Eintrag auf jeder Breite mit.
+			// Below lg the hamburger carries the navigation, and on `/` the entry "Start" is marked
+			// there — the case in question. The design picker brings its marked entry along at
+			// every width.
 			await page.setViewportSize({ width: 375, height: 812 });
 			await gotoRendered(page, '/');
 			await expect(page.locator('html')).toHaveAttribute('data-theme', theme.value);
 
 			await openDropdown(page, 'Bereiche');
 			await expect(page.getByRole('link', { name: /Start/ })).toHaveClass(/menu-active/);
-			await expectNoContrastViolations(page, `${theme.value}, Bereichsmenü`);
+			await expectNoContrastViolations(page, `${theme.value}, area menu`);
 			expect(
 				await contrastRatio(page, '.dropdown-content a.menu-active'),
-				`${theme.value}: die aktuelle Seite im Bereichsmenü`
+				`${theme.value}: the current page in the area menu`
 			).toBeGreaterThanOrEqual(4.5);
 
-			// Erst schließen, sonst überlagern sich zwei offene Menüs und axe misst durch das
-			// verdeckte hindurch. daisyUI hält ein Dropdown über den Fokus offen — `blur()` ist
-			// also das, was es schließt, nicht ein Klick daneben (der ginge ins offene Menü).
+			// Close it first, or two open menus overlap and axe measures through the covered one.
+			// daisyUI keeps a dropdown open via focus — so `blur()` is what closes it, not a click
+			// beside it (which would land in the open menu).
 			await page.evaluate(() => (document.activeElement as HTMLElement | null)?.blur());
 
-			// Nicht `/Design/` wie in a11y.spec.ts: dort wird bei Desktopbreite geprüft, hier bei
-			// 375px. Das Label „Design" ist unter `sm` ausgeblendet, und damit ist der
-			// zugängliche Name des Auslösers nicht mehr sein Inhalt, sondern sein `title`.
+			// Not `/Design/` as in a11y.spec.ts: that checks at desktop width, this one at 375px.
+			// The label "Design" is hidden below `sm`, so the trigger's accessible name is no
+			// longer its content but its `title`.
 			await openDropdown(page, /Design|Darstellung wählen/);
-			await expectNoContrastViolations(page, `${theme.value}, Designwahl`);
+			await expectNoContrastViolations(page, `${theme.value}, design picker`);
 			expect(
 				await contrastRatio(page, '.dropdown-content button.menu-active'),
-				`${theme.value}: das gewählte Theme in der Designwahl`
+				`${theme.value}: the chosen theme in the design picker`
 			).toBeGreaterThanOrEqual(4.5);
 		});
 	}

@@ -16,21 +16,22 @@
 	const held = $derived(sortRoles(grantedRoles));
 	const active = $derived(new Set(effectiveRoles));
 
-	// Nur eine Auswahl aus den GEHALTENEN Rollen. Das ist keine Zurückhaltung der Oberfläche,
-	// sondern die Regel selbst: das Backend schneidet die Auswahl mit den gehaltenen Rollen,
-	// eine Rolle anzubieten, die man nicht hat, wäre ein Knopf ohne Wirkung.
+	// A selection from the HELD roles only. That is not the interface being modest but the rule
+	// itself: the backend intersects the selection with the roles held, so offering a role
+	// somebody does not have would be a button with no effect.
 	//
-	// Wer sehen will, was das Dekanat sieht, gibt sich DEANS_OFFICE — sichtbar, datiert und
-	// befristet. Dass das ein Umweg ist, ist Absicht: ADMIN liest bewusst keine
-	// unveröffentlichten Wünsche, und eine Vorschau, die das umginge, wäre keine Vorschau.
+	// Anybody who wants to see what the dean's office sees grants themselves DEANS_OFFICE —
+	// visibly, dated and with an expiry. That this is a detour is intentional: ADMIN
+	// deliberately reads no unpublished wishes, and a preview that got around that would not be
+	// a preview.
 	async function assume(roles: string[]) {
 		document.cookie = `${ASSUME_COOKIE}=${serializeAssumedRoles(roles)}; path=/; max-age=${ASSUME_COOKIE_MAX_AGE}; samesite=lax`;
 		await invalidateAll();
 	}
 
 	async function reset() {
-		// max-age=0 statt eines Sentinel-Werts: „nicht verengt" ist die Abwesenheit des
-		// Cookies, und ein Zustand sollte nur eine Darstellung haben.
+		// max-age=0 rather than a sentinel value: "not narrowed" is the absence of the cookie,
+		// and one state should have only one representation.
 		document.cookie = `${ASSUME_COOKIE}=; path=/; max-age=0; samesite=lax`;
 		await invalidateAll();
 	}
@@ -71,9 +72,9 @@
 
 			<li></li>
 			<li>
-				<!-- Der Rückweg. Steht bewusst hier und nicht in der Verwaltung: eine Verengung, die
-				     man nur dort beenden kann, wo die Verengung den Zugang gerade wegnimmt, ist eine
-				     Falle. -->
+				<!-- The way back. Deliberately here and not in the administration area: a narrowing
+				     you can only end where the narrowing is currently taking the access away is a
+				     trap. -->
 				<button onclick={reset} disabled={!narrowed}>
 					<span aria-hidden="true">↩️</span> Zurück zu meinen Rollen
 				</button>

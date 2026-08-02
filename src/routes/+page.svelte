@@ -4,9 +4,9 @@
 
 	let { data }: { data: PageData } = $props();
 
-	// Durch denselben Filter wie die Bereichsleiste. Sonst kündigt diese Liste einen Bereich
-	// an, den die Navigation direkt darüber verbirgt — was nicht nach einer Rollenregel
-	// aussieht, sondern nach einem Fehler.
+	// Through the same filter as the area bar. Otherwise this list announces an area that the
+	// navigation directly above it hides — which does not look like a role rule but like a
+	// defect.
 	const planned = $derived(
 		visibleNavItems(NAV_ITEMS, data.session?.effectiveRoles ?? []).filter((item) => !item.href)
 	);
@@ -48,8 +48,9 @@
 					Erreichbar, Version <span class="font-mono">{data.serverBuild.version}</span>.
 				</p>
 			{:else}
-				<!-- Der Zustand steckt im Badge, der Satz bleibt normaler Fließtext. `text-error`
-				     als Textfarbe auf base-100 unterschreitet auf den hellen Themes 4.5:1. -->
+				<!-- The state sits in the badge, the sentence stays ordinary running text.
+				     `text-error` as a text colour on base-100 falls below 4.5:1 on the light
+				     themes. -->
 				<p class="text-base-content/80 text-sm">
 					<span class="badge badge-error badge-sm align-middle">Nicht erreichbar</span>
 					Die Seite rendert trotzdem — Daten fehlen aber überall.

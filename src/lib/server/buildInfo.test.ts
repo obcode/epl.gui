@@ -6,20 +6,19 @@ vi.mock('./backend', () => ({ backendRequest }));
 const { loadServerBuildInfo } = await import('./buildInfo');
 
 /**
- * Der Footer hängt an jeder Seite, also hängt jede Seite an dieser Funktion.
+ * The footer hangs on every page, so every page hangs on this function.
  *
- * Das Verhalten, das hier zählt, ist das im Fehlerfall: ein nicht erreichbares Backend darf
- * nicht dazu führen, dass die gesamte Anwendung mit 500 antwortet. Der Moment, in dem das
- * passiert, ist ausgerechnet der Deploy — der API-Container startet neu, und wer gerade eine
- * Seite offen hat, bekäme statt einer Oberfläche einen Fehler. Ein „—" im Footer ist die
- * nützlichere Antwort.
+ * The behaviour that matters here is the one in the failure case: an unreachable backend must
+ * not make the whole application answer with a 500. The moment that happens is, of all times,
+ * the deploy — the API container is restarting, and anybody with a page open would get an error
+ * instead of an interface. A "—" in the footer is the more useful answer.
  */
 describe('loadServerBuildInfo', () => {
 	beforeEach(() => {
 		backendRequest.mockReset();
 	});
 
-	it('reicht den Versionsstempel des Backends durch', async () => {
+	it('passes the backend version stamp through', async () => {
 		backendRequest.mockResolvedValue({
 			buildInfo: { version: '1.2.3', commit: '0123456', builtAt: '2026-07-31T09:00:00Z' }
 		});
@@ -31,16 +30,16 @@ describe('loadServerBuildInfo', () => {
 		});
 	});
 
-	it('liefert null statt zu werfen, wenn das Backend nicht antwortet', async () => {
+	it('returns null rather than throwing when the backend does not answer', async () => {
 		backendRequest.mockRejectedValue(new Error('connect ECONNREFUSED 127.0.0.1:8080'));
 
 		await expect(loadServerBuildInfo()).resolves.toBeNull();
 	});
 
-	it('liefert auch bei einer HTML-Antwort null', async () => {
-		// Der realistische Fall hinter einem falsch gesetzten TALLOX_SERVER: der SSR-Prozess
-		// hat kein OIDC-Cookie und bekommt die Login-Seite des IdP als HTML zurück. Das ist
-		// kein Netzwerkfehler, sondern ein Parse-Fehler — und muss denselben Weg nehmen.
+	it('returns null for an HTML response too', async () => {
+		// The realistic case behind a wrongly set TALLOX_SERVER: the SSR process has no OIDC
+		// cookie and gets the IdP's login page back as HTML. That is not a network failure but a
+		// parse failure — and has to take the same route.
 		backendRequest.mockRejectedValue(new SyntaxError('Unexpected token < in JSON at position 0'));
 
 		await expect(loadServerBuildInfo()).resolves.toBeNull();

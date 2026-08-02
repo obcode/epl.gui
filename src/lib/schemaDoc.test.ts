@@ -3,28 +3,28 @@ import { describe, expect, it } from 'vitest';
 import { anchorFor, buildSchemaDoc, describeBlocks, inlineSegments } from './schemaDoc';
 
 const SDL = `
-"""Der Einstieg."""
+"""The entry point."""
 type Query {
-	"Die anfragende Person."
+	"The calling person."
 	me: Person
-	"Tokens der anfragenden Person."
+	"The calling person's tokens."
 	myTokens: [PersonalAccessToken!]
 }
 
 type Mutation {
-	"Legt ein Token an."
+	"Creates a token."
 	createPersonalAccessToken(
-		"Wofür es ist."
+		"What it is for."
 		description: String!
 		expiresInDays: Int
 	): PersonalAccessToken!
 }
 
-"""Eine Person."""
+"""A person."""
 type Person {
 	id: ID!
 	roles: [Role!]!
-	alt: String @deprecated(reason: "Heißt jetzt id.")
+	alt: String @deprecated(reason: "Called id now.")
 }
 
 type PersonalAccessToken {
@@ -32,113 +32,113 @@ type PersonalAccessToken {
 	createdAt: Time!
 }
 
-"""Eine Rolle."""
+"""A role."""
 enum Role {
-	"Lehrende Person."
+	"Somebody who teaches."
 	LECTURER
 	ADMIN
 }
 
-"""Ein Zeitpunkt."""
+"""A moment in time."""
 scalar Time
 `;
 
 describe('buildSchemaDoc', () => {
 	const doc = buildSchemaDoc(SDL);
 
-	it('stellt Query und Mutation nach vorn', () => {
-		// Die Wurzeltypen sind das, was jemand sucht: was kann ich abfragen, was kann ich
-		// ändern. Alphabetisch einsortiert stünde Mutation zwischen zwei Datentypen.
+	it('puts Query and Mutation first', () => {
+		// The root types are what somebody is looking for: what can I query, what can I change.
+		// Sorted alphabetically, Mutation would sit between two data types.
 		expect(doc.roots.map((t) => t.name)).toEqual(['Query', 'Mutation']);
 	});
 
-	it('sortiert den Rest alphabetisch', () => {
+	it('sorts the rest alphabetically', () => {
 		const names = doc.types.map((t) => t.name);
 		expect(names).toEqual([...names].sort((a, b) => a.localeCompare(b)));
 	});
 
-	it('lässt Introspection-Typen weg', () => {
+	it('leaves out introspection types', () => {
 		const all = [...doc.roots, ...doc.types].map((t) => t.name);
 		expect(all.some((name) => name.startsWith('__'))).toBe(false);
 	});
 
-	it('lässt die eingebauten Skalare weg, nicht aber die eigenen', () => {
-		// String und Int erklären sich selbst; Time trägt eine Beschreibung, die jemand
-		// geschrieben hat, und ist genau deshalb erklärungsbedürftig.
+	it('leaves out the built-in scalars but not the custom ones', () => {
+		// String and Int explain themselves; Time carries a description somebody wrote, and is
+		// therefore exactly the kind of thing that needs explaining.
 		const names = doc.types.map((t) => t.name);
 		expect(names).not.toContain('String');
 		expect(names).not.toContain('Boolean');
 		expect(names).toContain('Time');
 	});
 
-	it('übernimmt Beschreibungen von Typen, Feldern und Argumenten', () => {
-		// Die Beschreibungen sind der eigentliche Inhalt der Referenz — ohne sie ist sie nur
-		// eine Liste von Namen, die man auch per Introspection bekommt.
+	it('carries descriptions of types, fields and arguments', () => {
+		// The descriptions are the actual content of the reference — without them it is just a
+		// list of names, which introspection gives you anyway.
 		const query = doc.roots.find((t) => t.name === 'Query');
-		expect(query?.description).toBe('Der Einstieg.');
-		expect(query?.fields.find((f) => f.name === 'me')?.description).toBe('Die anfragende Person.');
+		expect(query?.description).toBe('The entry point.');
+		expect(query?.fields.find((f) => f.name === 'me')?.description).toBe('The calling person.');
 
 		const mutation = doc.roots.find((t) => t.name === 'Mutation');
 		const create = mutation?.fields.find((f) => f.name === 'createPersonalAccessToken');
-		expect(create?.args.find((a) => a.name === 'description')?.description).toBe('Wofür es ist.');
+		expect(create?.args.find((a) => a.name === 'description')?.description).toBe('What it is for.');
 	});
 
-	it('behält die Nullbarkeit im Typnamen', () => {
-		// `[PersonalAccessToken!]` gegen `[PersonalAccessToken!]!` ist hier keine Feinheit: die
-		// nullable Liste ist die Art, wie @interactiveOnly antwortet, ohne die Abfrage zu
-		// kippen. Wer die Referenz liest, muss den Unterschied sehen.
+	it('keeps the nullability in the type name', () => {
+		// `[PersonalAccessToken!]` against `[PersonalAccessToken!]!` is not a subtlety here: the
+		// nullable list is how @interactiveOnly answers without failing the query. Anybody
+		// reading the reference has to see the difference.
 		const query = doc.roots.find((t) => t.name === 'Query');
 		expect(query?.fields.find((f) => f.name === 'myTokens')?.type).toBe('[PersonalAccessToken!]');
 		expect(query?.fields.find((f) => f.name === 'me')?.type).toBe('Person');
 	});
 
-	it('nennt veraltete Felder als solche', () => {
+	it('names deprecated fields as such', () => {
 		const person = doc.types.find((t) => t.name === 'Person');
-		expect(person?.fields.find((f) => f.name === 'alt')?.deprecationReason).toBe('Heißt jetzt id.');
+		expect(person?.fields.find((f) => f.name === 'alt')?.deprecationReason).toBe('Called id now.');
 	});
 
-	it('listet Enum-Werte mit ihren Beschreibungen', () => {
+	it('lists enum values with their descriptions', () => {
 		const role = doc.types.find((t) => t.name === 'Role');
 		expect(role?.kind).toBe('enum');
 		expect(role?.values.map((v) => v.name)).toEqual(['LECTURER', 'ADMIN']);
-		expect(role?.values[0].description).toBe('Lehrende Person.');
+		expect(role?.values[0].description).toBe('Somebody who teaches.');
 	});
 });
 
-describe('das echte Schema', () => {
-	// Gegen die eingecheckte Datei, nicht nur gegen ein Beispiel: sie ist die Quelle sowohl
-	// für die Referenz als auch für `pnpm codegen`. Wenn sie sich so ändert, dass die Referenz
-	// leer bliebe, soll das hier auffallen und nicht auf der Seite.
+describe('the real schema', () => {
+	// Against the committed file rather than only against a sample: it is the source both for
+	// the reference and for `pnpm codegen`. If it changes in a way that would leave the
+	// reference empty, that should show up here and not on the page.
 	const doc = buildSchemaDoc(readFileSync('schema.graphql', 'utf8'));
 
-	it('hat einen Query-Typ mit Feldern', () => {
+	it('has a Query type with fields', () => {
 		expect(doc.roots[0].name).toBe('Query');
 		expect(doc.roots[0].fields.length).toBeGreaterThan(0);
 	});
 
-	it('beschreibt jeden Wurzelfeld-Eintrag', () => {
-		// Ein Feld ohne Beschreibung ist in der Referenz eine Zeile, die nichts erklärt. Das
-		// ist im Backend-Schema zu beheben, nicht hier.
+	it('describes every root field', () => {
+		// A field with no description is a line in the reference that explains nothing. That is
+		// to be fixed in the backend schema, not here.
 		for (const root of doc.roots) {
 			for (const field of root.fields) {
-				expect(field.description, `${root.name}.${field.name} hat keine Beschreibung`).toBeTruthy();
+				expect(field.description, `${root.name}.${field.name} has no description`).toBeTruthy();
 			}
 		}
 	});
 });
 
 describe('anchorFor', () => {
-	it('erzeugt eine Sprungmarke ohne Sonderzeichen', () => {
+	it('produces a jump target without special characters', () => {
 		expect(anchorFor('PersonalAccessToken')).toBe('typ-PersonalAccessToken');
 		expect(anchorFor('Foo Bar!')).toBe('typ-FooBar');
 	});
 });
 
 describe('describeBlocks', () => {
-	it('macht aus harten Umbrüchen wieder Fließtext', () => {
-		// Der eigentliche Befund: die Beschreibungen sind im Schema auf knapp 100 Zeichen
-		// umbrochen, weil sie dort Quelltext sind. Auf einer Seite endete die Zeile damit
-		// mitten im Satz, an einer Stelle, die mit der Breite des Browsers nichts zu tun hat.
+	it('turns hard breaks back into running text', () => {
+		// The actual finding: the descriptions are wrapped at just under 100 characters in the
+		// schema, because they are source code there. On a page the line therefore ended
+		// mid-sentence, at a position that has nothing to do with the width of the browser.
 		const blocks = describeBlocks(
 			'Nullable on purpose, and the null is the interesting part: through a\n' +
 				'Personal Access Token this field answers null rather than failing.'
@@ -152,39 +152,42 @@ describe('describeBlocks', () => {
 		expect(blocks[0].text).not.toContain('\n');
 	});
 
-	it('behält Absätze als Absätze', () => {
-		// Die Leerzeile ist eine Aussage: ohne sie wird aus einer strukturierten Erklärung
-		// eine Textwand, und das wäre die Überkorrektur zum ursprünglichen Fehler.
-		const blocks = describeBlocks('Erster Absatz.\nnoch erster.\n\nZweiter Absatz.');
+	it('keeps paragraphs as paragraphs', () => {
+		// The blank line is a statement: without it a structured explanation becomes a wall of
+		// text, and that would be the overcorrection to the original defect.
+		const blocks = describeBlocks('First paragraph.\nstill the first.\n\nSecond paragraph.');
 
-		expect(blocks.map((b) => b.text)).toEqual(['Erster Absatz. noch erster.', 'Zweiter Absatz.']);
+		expect(blocks.map((b) => b.text)).toEqual([
+			'First paragraph. still the first.',
+			'Second paragraph.'
+		]);
 	});
 
-	it('lässt eingerückte Blöcke in Ruhe', () => {
-		// Heute gibt es im Schema keine. Ein Beispielaufruf in einer Beschreibung ist aber
-		// absehbar, und durch einen Reflow geschickt wäre er unlesbar.
+	it('leaves indented blocks alone', () => {
+		// There are none in the schema today. But an example call in a description is
+		// foreseeable, and put through a reflow it would be unreadable.
 		const blocks = describeBlocks(
-			'Aufruf:\n\n    curl -H "Authorization: Bearer …" \\\n      https://…'
+			'Call:\n\n    curl -H "Authorization: Bearer …" \\\n      https://…'
 		);
 
-		expect(blocks[0]).toEqual({ kind: 'text', text: 'Aufruf:' });
+		expect(blocks[0]).toEqual({ kind: 'text', text: 'Call:' });
 		expect(blocks[1].kind).toBe('code');
 		expect(blocks[1].text).toContain('\n');
 	});
 
-	it('kommt mit fehlenden und leeren Beschreibungen zurecht', () => {
+	it('copes with missing and empty descriptions', () => {
 		expect(describeBlocks(null)).toEqual([]);
 		expect(describeBlocks(undefined)).toEqual([]);
 		expect(describeBlocks('   \n\n  ')).toEqual([]);
 	});
 
-	it('räumt Windows-Zeilenenden und doppelte Leerzeichen auf', () => {
-		expect(describeBlocks('Eine Zeile\r\nund noch eine')[0].text).toBe('Eine Zeile und noch eine');
+	it('tidies up Windows line endings and double spaces', () => {
+		expect(describeBlocks('One line\r\nand another')[0].text).toBe('One line and another');
 	});
 
-	it('reflowt jede Beschreibung des echten Schemas ohne Rest-Umbruch', () => {
-		// Gegen die eingecheckte Datei: wenn im Backend jemand eine Beschreibung mit einer
-		// Struktur schreibt, die hier falsch behandelt wird, soll das auffallen.
+	it('reflows every description of the real schema with no break left over', () => {
+		// Against the committed file: if somebody in the backend writes a description with a
+		// structure this handles wrongly, it should show up.
 		const doc = buildSchemaDoc(readFileSync('schema.graphql', 'utf8'));
 
 		for (const type of [...doc.roots, ...doc.types]) {
@@ -201,29 +204,29 @@ describe('describeBlocks', () => {
 });
 
 describe('inlineSegments', () => {
-	it('zeichnet Backtick-Abschnitte als Code aus', () => {
-		// GraphQL-Beschreibungen sind Markdown, und das Schema benutzt das: `null`,
-		// `@interactiveOnly`, `/api/graphql`. Wörtlich angezeigt sehen die Backticks aus wie
-		// ein Formatierungsfehler.
-		expect(inlineSegments('antwortet `null` statt zu scheitern')).toEqual([
-			{ code: false, text: 'antwortet ' },
+	it('marks backtick sections up as code', () => {
+		// GraphQL descriptions are Markdown, and the schema uses that: `null`,
+		// `@interactiveOnly`, `/api/graphql`. Displayed verbatim the backticks look like a
+		// formatting error.
+		expect(inlineSegments('answers `null` rather than failing')).toEqual([
+			{ code: false, text: 'answers ' },
 			{ code: true, text: 'null' },
-			{ code: false, text: ' statt zu scheitern' }
+			{ code: false, text: ' rather than failing' }
 		]);
 	});
 
-	it('kommt mit einem einzelnen Backtick zurecht', () => {
-		// Ein unpaariger Backtick ist ein Tippfehler im Schema, kein Grund, den Rest des
-		// Absatzes zu verlieren.
-		expect(inlineSegments('ein ` einzelner')).toEqual([
-			{ code: false, text: 'ein ' },
-			{ code: true, text: ' einzelner' }
+	it('copes with a single backtick', () => {
+		// An unpaired backtick is a typo in the schema, not a reason to lose the rest of the
+		// paragraph.
+		expect(inlineSegments('a ` single one')).toEqual([
+			{ code: false, text: 'a ' },
+			{ code: true, text: ' single one' }
 		]);
 	});
 
-	it('gibt Text ohne Backticks unverändert zurück', () => {
-		expect(inlineSegments('ganz normaler Satz')).toEqual([
-			{ code: false, text: 'ganz normaler Satz' }
+	it('returns text without backticks unchanged', () => {
+		expect(inlineSegments('a perfectly ordinary sentence')).toEqual([
+			{ code: false, text: 'a perfectly ordinary sentence' }
 		]);
 	});
 });

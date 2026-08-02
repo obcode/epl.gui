@@ -4,34 +4,32 @@ import { loadServerBuildInfo } from '$lib/server/buildInfo';
 import { loadSession } from '$lib/server/session';
 
 /**
- * Was auf jeder Seite im Rahmen steht: Identität, Rollen, Theme, Serverversion.
+ * What appears in the frame on every page: identity, roles, theme, server version.
  *
- * Im Layout und nicht in jedem `+page.server.ts`, damit eine neue Seite den Rahmen nicht
- * versehentlich ohne diese Werte rendert.
+ * In the layout rather than in every `+page.server.ts`, so that a new page cannot accidentally
+ * render the frame without these values.
  *
- * Die Sitzung kommt aus `session` und nicht aus `me`, weil die beiden auseinanderlaufen, sobald
- * jemand seine Rollen verengt hat: `me.roles` sind die gehaltenen, `session.effectiveRoles`
- * sind die, nach denen der Server diesen Request beurteilt. Eine Navigation, die aus den
- * gehaltenen Rollen gebaut wird, zeigt in der Vorschau das Menü einer Person, deren Rechte der
- * Server gerade nicht mehr anwendet — und beantwortet damit genau die Frage nicht, für die es
- * die Vorschau gibt.
+ * The session comes from `session` and not from `me`, because the two diverge as soon as
+ * somebody has narrowed their roles: `me.roles` are the held ones, `session.effectiveRoles` are
+ * the ones the server judges this request by. A navigation built from the held roles shows, in
+ * the preview, the menu of a person whose permissions the server is no longer applying — and
+ * thereby fails to answer the very question the preview exists for.
  */
 export const load: LayoutServerLoad = async ({ locals }) => {
 	const [session, serverBuild] = await Promise.all([loadSession(), loadServerBuildInfo()]);
 
 	if (session.kind === 'no-access') {
-		// 403 und nicht 401: eine erneute Anmeldung hilft nicht. Der Auth-Proxy hat diese Person
-		// bereits durchgelassen — was fehlt, ist eine Zeile in `person`, und die legt die
-		// Administration an. `+error.svelte` macht daraus einen Satz, der das sagt.
+		// 403 and not 401: signing in again does not help. The auth proxy already let this person
+		// through — what is missing is a row in `person`, and the administrators create that.
+		// `+error.svelte` turns it into a sentence that says so.
 		error(403, session.message);
 	}
 
 	return {
 		remoteUser: locals.remoteUser ?? null,
 		remoteDisplayname: locals.remoteDisplayname ?? null,
-		// null, wenn das Backend nicht erreichbar war. Die Seite rendert dann weiter, mit dem
-		// Hinweis im Footer — ein laufender Deploy darf nicht jede Seite mit einem Fehler
-		// beantworten.
+		// null when the backend was unreachable. The page keeps rendering, with the note in the
+		// footer — a deploy in progress must not make every page answer with an error.
 		session: session.kind === 'ok' ? session.session : null,
 		theme: locals.theme,
 		serverBuild

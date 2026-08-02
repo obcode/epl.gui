@@ -3,20 +3,20 @@ import type { ThemeChoice } from '$lib/themes';
 declare global {
 	namespace App {
 		interface Locals {
-			/** Verifizierte Mailadresse, vom Auth-Proxy gesetzt. Lokal undefined. */
+			/** The verified mail address, set by the auth proxy. Undefined locally. */
 			remoteUser?: string;
 			remoteDisplayname?: string;
 			/**
-			 * Rollenverengung aus dem Cookie. `undefined` = nicht verengt, `[]` = auf gar
-			 * keine Rolle verengt. Siehe $lib/assumedRoles.
+			 * Role narrowing from the cookie. `undefined` = not narrowed, `[]` = narrowed to no
+			 * role at all. See $lib/assumedRoles.
 			 */
 			assumedRoles?: string[];
-			/** Aus dem Cookie aufgelöst, siehe hooks.server.ts. Nie ein ungeprüfter Wert. */
+			/** Resolved from the cookie, see hooks.server.ts. Never an unchecked value. */
 			theme: ThemeChoice;
 		}
 	}
 
-	/** Zur Bauzeit von vite.config.ts eingesetzt. */
+	/** Substituted at build time by vite.config.ts. */
 	const __APP_VERSION__: string;
 	const __BUILD_TIME__: string;
 }

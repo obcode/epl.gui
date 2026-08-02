@@ -5,9 +5,9 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	// Welche Zeile gerade aufgeklappt ist. Eine ausklappbare Zeile statt einer Detailseite:
-	// Rollen zu setzen heißt, sie mit denen der anderen zu vergleichen, und dafür muss die
-	// Liste stehen bleiben.
+	// Which row is currently expanded. An expandable row rather than a detail page: setting
+	// roles means comparing them with everybody else's, and for that the list has to stay
+	// put.
 	let editing = $state<string | null>(null);
 </script>
 

@@ -1,33 +1,32 @@
 import { PERSONAS, type Persona } from './fixtures';
 
 /**
- * Die Besetzung als SQL, für den Start eines E2E-Laufs.
+ * The cast as SQL, for the start of an end-to-end run.
  *
- * Seit das Backend Identität durchsetzt, ist eine Person ohne Zeile in `person` niemand: der
- * Proxy-Header wird gegen die Tabelle aufgelöst, und ohne Treffer antwortet jede Anfrage mit
- * 401. Vorher war das egal, weil keine Seite eine Identität brauchte — deshalb gab es diesen
- * Schritt bisher nicht.
+ * Since the backend enforces identity, a person with no row in `person` is nobody: the proxy
+ * header is resolved against the table, and without a match every request answers 401. That
+ * used to be irrelevant because no page needed an identity — which is why this step did not
+ * exist before.
  *
- * Erzeugt aus `PERSONAS` und nicht als Datei danebengelegt: eine zweite Liste mit denselben
- * Adressen wäre genau die Art von Duplikat, das beim Hinzufügen einer Person auseinanderläuft
- * — und der Fehler zeigte sich als 401 in einem Test, der von Personen gar nicht handelt.
+ * Generated from `PERSONAS` rather than kept as a file beside it: a second list with the same
+ * addresses would be exactly the kind of duplicate that drifts apart when somebody adds a
+ * person — and the failure would show up as a 401 in a test that is not about people at all.
  */
 
-/** Rollen, die eine Persona im E2E-Lauf hält. Klein gehalten: mehr behauptet nur mehr. */
+/** The roles a persona holds in an end-to-end run. Kept small: more only claims more. */
 const ROLES: Record<string, readonly string[]> = {
 	'prof.eins@example.org': ['LECTURER'],
 	'prof.zwei@example.org': ['LECTURER'],
-	// Vier plant — sie ist die Persona, an der eine Ausnahme sichtbar wird.
+	// Vier plans — she is the persona an exception becomes visible on.
 	'prof.vier@example.org': ['LECTURER', 'PROGRAMME_LEAD'],
-	// Sechs verwaltet. Zusätzlich LECTURER, weil die Rollenvorschau nur eine Auswahl aus den
-	// GEHALTENEN Rollen anbietet: „einmal ansehen, was eine Dozentin sieht" setzt voraus,
-	// dass man Dozent:in ist. Das ist keine Umständlichkeit, sondern der Grund, warum die
-	// Vorschau nichts hinzufügen kann.
+	// Sechs administers. LECTURER on top, because the role preview only offers a selection from
+	// the HELD roles: "let me see what a lecturer sees" presupposes being one. That is not
+	// awkwardness but the reason the preview cannot add anything.
 	'admin@example.org': ['LECTURER', 'ADMIN']
 };
 
-/** Verdoppelt einfache Anführungszeichen. Die Werte sind Konstanten aus diesem Repo, aber
- *  eine Zeichenkette, die ungeprüft in SQL wandert, ist eine Gewohnheit und keine Ausnahme. */
+/** Doubles single quotes. The values are constants from this repository, but a string that
+ *  travels into SQL unchecked is a habit and not an exception. */
 function quote(value: string): string {
 	return `'${value.replace(/'/g, "''")}'`;
 }
@@ -36,9 +35,9 @@ export function seedStatementsFor(personas: readonly Persona[]): string[] {
 	const statements: string[] = [];
 
 	for (const persona of personas) {
-		// ON CONFLICT DO NOTHING: der Lauf startet gegen eine Datenbank, die von einem
-		// früheren Lauf übrig sein kann. Ein Seed, der beim zweiten Mal scheitert, macht aus
-		// „Datenbank nicht frisch" einen Testfehler, der nach einem Anwendungsfehler aussieht.
+		// ON CONFLICT DO NOTHING: the run starts against a database that may be left over from an
+		// earlier one. A seed that fails the second time turns "database not fresh" into a test
+		// failure that looks like an application failure.
 		statements.push(
 			`INSERT INTO person (id, mail, name) VALUES (gen_random_uuid(), ${quote(persona.mail)}, ${quote(persona.name)}) ON CONFLICT (mail) DO NOTHING;`
 		);
@@ -53,7 +52,7 @@ export function seedStatementsFor(personas: readonly Persona[]): string[] {
 	return statements;
 }
 
-/** Das vollständige Skript, so wie es an psql geht. */
+/** The complete script, exactly as it goes to psql. */
 export function seedSql(): string {
 	return seedStatementsFor(Object.values(PERSONAS)).join('\n');
 }

@@ -2,25 +2,24 @@ import { test, expect, gotoRendered } from './fixtures';
 import { THEME_COOKIE } from '../src/lib/themes';
 
 /**
- * Das Theme über den vollen Weg: Klick → Cookie → nächster SSR-Request → erstes Byte.
+ * The theme along its full path: click → cookie → next SSR request → first byte.
  *
- * `resolveTheme()` ist in vitest geprüft, aber die Eigenschaft, um derentwillen es überhaupt
- * ein Cookie und kein localStorage ist, lässt sich nur im Browser prüfen: dass beim vollen
- * Neuladen **nicht** kurz das Default-Theme aufblitzt. Das ist kein Unit-Test-Thema, sondern
- * eine Frage danach, was im ersten ausgelieferten Byte steht.
+ * `resolveTheme()` is checked in vitest, but the property that makes this a cookie rather than
+ * localStorage in the first place can only be checked in a browser: that a full reload does
+ * **not** briefly flash the default theme. That is not a unit test subject but a question about
+ * what is in the first byte delivered.
  */
-test.describe('Theme', () => {
-	test('ohne Cookie steht kein data-theme im Markup', async ({ page }) => {
+test.describe('theme', () => {
+	test('has no data-theme in the markup without a cookie', async ({ page }) => {
 		await gotoRendered(page, '/');
 
-		// Nur ohne `data-theme` greifen `--default` und `--prefersdark` — die Seite folgt dann
-		// dem Betriebssystem. Ein leeres oder gar gesetztes Attribut bräche genau das.
+		// Only without `data-theme` do `--default` and `--prefersdark` apply — the page then
+		// follows the operating system. An empty or even a set attribute would break exactly
+		// that.
 		await expect(page.locator('html')).not.toHaveAttribute('data-theme');
 	});
 
-	test('eine Wahl überlebt den vollen Reload und wird schon serverseitig gerendert', async ({
-		page
-	}) => {
+	test('a choice survives a full reload and is already rendered server-side', async ({ page }) => {
 		await gotoRendered(page, '/');
 
 		await page.getByRole('button', { name: /Design/ }).click();
@@ -31,18 +30,17 @@ test.describe('Theme', () => {
 		const cookies = await page.context().cookies();
 		expect(cookies.find((c) => c.name === THEME_COOKIE)?.value).toBe('dracula');
 
-		// Der eigentliche Test: die Antwort des Servers muss das Attribut bereits enthalten.
-		// Über das DOM nach dem Laden zu prüfen würde auch dann gelingen, wenn ein Skript es
-		// nachträglich setzt — und genau dieses Nachsetzen ist das Aufblitzen, das vermieden
-		// werden soll.
+		// The actual test: the server's response has to contain the attribute already. Checking
+		// via the DOM after loading would also succeed if a script set it afterwards — and that
+		// setting-afterwards is precisely the flash this is meant to avoid.
 		const response = await page.goto('/');
 		expect(await response!.text()).toContain('data-theme="dracula"');
 	});
 
-	test('ein manipulierter Cookie landet nicht im Markup', async ({ page, context }) => {
-		// Der aufgelöste Wert wird ungeescaped in das <html>-Tag geschrieben. Deshalb ist
-		// `resolveTheme()` eine Allowlist und kein Escaping — wer den Cookie setzen kann, darf
-		// damit nichts in das Markup schreiben können.
+	test('a tampered cookie does not reach the markup', async ({ page, context }) => {
+		// The resolved value is written into the <html> tag unescaped. That is why
+		// `resolveTheme()` is an allowlist and not escaping — whoever can set the cookie must not
+		// be able to write anything into the markup with it.
 		await context.addCookies([
 			{
 				name: THEME_COOKIE,

@@ -4,7 +4,7 @@
 
 	let { data }: { data: PageData } = $props();
 
-	/** Datum und Uhrzeit, wie sie in Europe/Berlin gelesen werden. */
+	/** Date and time as they are read in Europe/Berlin. */
 	function when(value: string): string {
 		return new Date(value).toLocaleString('de-DE', { dateStyle: 'medium', timeStyle: 'short' });
 	}

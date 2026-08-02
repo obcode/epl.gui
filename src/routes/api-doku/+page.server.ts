@@ -3,17 +3,16 @@ import { examples, tokenEndpoint } from '$lib/apiExamples';
 import type { PageServerLoad } from './$types';
 
 /**
- * Die Route heißt `/api-doku` und nicht `/api`.
+ * The route is called `/api-doku` and not `/api`.
  *
- * `/api/graphql` ist die Maschinen-API, die Caddy am Backend vorbei an die GUI nicht
- * weiterreicht. Ein GUI-Pfad direkt daneben funktioniert heute — der Matcher trifft exakt —
- * und wäre genau dann kaputt, wenn jemand ihn zu `/api/*` verallgemeinert. Der Preis dafür
- * ist ein Bindestrich im Pfad; der Gegenwert ist, dass die beiden Namensräume sich nicht
- * berühren.
+ * `/api/graphql` is the machine API, which Caddy does not forward to the GUI. A GUI path right
+ * next to it works today — the matcher is exact — and would break precisely when somebody
+ * generalises it to `/api/*`. The price is a hyphen in the path; what it buys is that the two
+ * namespaces never touch.
  */
 export const load: PageServerLoad = async () => {
-	// Serverseitig aufgelöst, damit die Seite die URL schon im ersten HTML enthält: wer sie
-	// kopieren will, soll nicht warten, bis JavaScript geladen hat.
+	// Resolved on the server so the page carries the URL in the first HTML: anybody wanting to
+	// copy it should not have to wait for JavaScript to load.
 	const endpoint = tokenEndpoint(env.PUBLIC_TALLOX_SERVER ?? '');
 
 	return {

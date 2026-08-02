@@ -6,9 +6,9 @@
 
 	let { data, form }: { data: PageData; form: ActionData } = $props();
 
-	// Das frisch erzeugte Token lebt ausschließlich in dieser Variablen, bis die Seite neu
-	// geladen wird. Es wird nicht in localStorage gelegt und nicht in die URL geschrieben:
-	// beides überlebt den Moment, für den es gedacht ist.
+	// The freshly created token lives in this variable alone until the page is reloaded. It is
+	// not put into localStorage and not written into the URL: both would outlive the moment it
+	// is meant for.
 	const created = $derived(form && 'created' in form ? form.created : null);
 	const refusal = $derived(form && 'message' in form ? form : null);
 
@@ -33,8 +33,8 @@
 	</div>
 
 	{#if created}
-		<!-- Der einzige Moment, in dem das Secret existiert. Deshalb steht es oben, in einem
-		     eigenen Kasten, und die Seite sagt ausdrücklich, dass es nicht wiederkommt. -->
+		<!-- The only moment the secret exists. That is why it sits at the top, in a box of its
+		     own, and the page says explicitly that it will not come back. -->
 		<div class="border-success bg-base-100 flex flex-col gap-3 rounded-lg border-2 p-4">
 			<div>
 				<h2 class="flex items-center gap-2 font-medium">
@@ -47,8 +47,8 @@
 			</div>
 
 			<div class="flex flex-col gap-2 sm:flex-row">
-				<!-- readonly statt disabled: der Wert bleibt auswählbar und für Screenreader
-				     erreichbar, lässt sich aber nicht versehentlich ändern. -->
+				<!-- readonly rather than disabled: the value stays selectable and reachable for
+				     screen readers, but cannot be changed by accident. -->
 				<input
 					class="input input-bordered w-full font-mono text-sm"
 					value={created.secret}
@@ -114,8 +114,8 @@
 		{#if data.tokens.length === 0}
 			<p class="text-base-content/80 text-sm">Noch keine Tokens angelegt.</p>
 		{:else}
-			<!-- Breite Tabellen leben in overflow-x-auto, damit die Seite bei 375px nicht
-			     seitlich wandert. -->
+			<!-- Wide tables live in overflow-x-auto so the page does not drift sideways at
+			     375px. -->
 			<div class="overflow-x-auto">
 				<table class="table-zebra table text-sm">
 					<thead>

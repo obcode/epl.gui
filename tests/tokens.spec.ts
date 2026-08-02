@@ -1,16 +1,15 @@
 import { test, expect, PERSONAS, gotoRendered } from './fixtures';
 
 /**
- * Die Tokenverwaltung, gegen den echten Stack.
+ * Token management, against the real stack.
  *
- * Was hier geprüft wird, kann kein Unit-Test zeigen: dass ein Token, das diese Seite anlegt,
- * anschließend gegen die *andere* Tür funktioniert. Der Weg dorthin führt durch die
- * Identitätsweitergabe im SSR, durch die Mutation im Backend, durch das Hashen des Secrets
- * und wieder zurück durch die Authentifizierung — und jede dieser Stationen kann für sich
- * korrekt sein, während das Ergebnis unbrauchbar ist.
+ * What is checked here cannot be shown by a unit test: that a token this page creates then works
+ * against the *other* door. The route there runs through the identity relay in the SSR, through
+ * the mutation in the backend, through hashing the secret and back through authentication — and
+ * every one of those stations can be correct on its own while the result is unusable.
  */
 test.describe('Personal Access Tokens', () => {
-	test('anlegen zeigt das Token genau einmal, und es funktioniert', async ({ asPersona }) => {
+	test('creating shows the token exactly once, and it works', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/konto/tokens');
 
@@ -24,8 +23,8 @@ test.describe('Personal Access Tokens', () => {
 		const secret = await secretField.inputValue();
 		expect(secret).toMatch(/^tallox_[0-9A-HJKMNP-TV-Z]{16}_[A-Za-z0-9_-]{43}$/);
 
-		// Der eigentliche Beweis: das eben ausgegebene Token authentifiziert gegen die
-		// Token-Tür, als seine Eigentümerin.
+		// The actual proof: the token just issued authenticates against the token door, as its
+		// owner.
 		const response = await page.request.post(
 			`${process.env.TALLOX_SERVER?.replace('/query', '') ?? 'http://localhost:8080'}/api/graphql`,
 			{
@@ -36,18 +35,18 @@ test.describe('Personal Access Tokens', () => {
 		expect(response.ok()).toBe(true);
 		expect(await response.json()).toMatchObject({ data: { me: { mail: PERSONAS.eins.mail } } });
 
-		// Und nach dem Neuladen ist das Secret weg — es existiert nur in der Antwort auf die
-		// Mutation. Eine Seite, die es beim zweiten Blick noch zeigt, hat es irgendwo abgelegt.
+		// And after a reload the secret is gone — it exists only in the response to the mutation.
+		// A page that still shows it on second look has stored it somewhere.
 		await gotoRendered(page, '/konto/tokens');
 		await expect(page.getByLabel('Neues Token')).toHaveCount(0);
 		await expect(page.getByText(description)).toBeVisible();
 	});
 
-	test('widerrufen macht das Token sofort unbrauchbar', async ({ asPersona }) => {
+	test('revoking makes the token unusable immediately', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.zwei);
 		await gotoRendered(page, '/konto/tokens');
 
-		const description = `Widerruf ${Date.now()}`;
+		const description = `Revocation ${Date.now()}`;
 		await page.getByLabel('Wofür?').fill(description);
 		await page.getByRole('button', { name: 'Anlegen' }).click();
 
@@ -60,12 +59,12 @@ test.describe('Personal Access Tokens', () => {
 		});
 		expect(before.ok()).toBe(true);
 
-		// Über die Beschreibung und nicht über `.first()`.
+		// By the description and not by `.first()`.
 		//
-		// Nach dem Anlegen lädt SvelteKit die Liste neu; `.first()` traf deshalb mal die neue
-		// und mal noch die alte erste Zeile — der Test widerrief dann ein anderes Token, und
-		// das hier geprüfte funktionierte weiter. Als „flaky" gemeldet, tatsächlich aber ein
-		// Test, der zeitweise etwas anderes prüfte als sein Name sagt.
+		// After creating, SvelteKit reloads the list; `.first()` therefore sometimes hit the new
+		// and sometimes still the old first row — the test then revoked a different token, and
+		// the one under test kept working. Reported as "flaky", but in fact a test that
+		// intermittently checked something other than what its name says.
 		const row = page.getByRole('row').filter({ hasText: description });
 		await expect(row).toBeVisible();
 		await row.getByRole('button', { name: 'Widerrufen' }).click();
@@ -78,8 +77,8 @@ test.describe('Personal Access Tokens', () => {
 		expect(after.status()).toBe(401);
 	});
 
-	test('niemand sieht die Tokens einer anderen Person', async ({ asPersona }) => {
-		const marker = `Nur für Eins ${Date.now()}`;
+	test("nobody sees another person's tokens", async ({ asPersona }) => {
+		const marker = `Only for Eins ${Date.now()}`;
 
 		const eins = await asPersona(PERSONAS.eins);
 		await gotoRendered(eins, '/konto/tokens');
@@ -90,12 +89,12 @@ test.describe('Personal Access Tokens', () => {
 		const zwei = await asPersona(PERSONAS.zwei);
 		await gotoRendered(zwei, '/konto/tokens');
 
-		// Ein Token ist eine Zugangsdatei; die Liste einer anderen Person zu sehen heißt zu
-		// wissen, welche IDs es gibt — und die ID ist es, was ein Widerruf nimmt.
+		// A token is a credential; seeing another person's list means knowing which ids exist —
+		// and the id is what a revocation takes.
 		await expect(zwei.getByText(marker)).toHaveCount(0);
 	});
 
-	test('die Seite ist barrierefrei', async ({ asPersona, checkA11y }) => {
+	test('the page is accessible', async ({ asPersona, checkA11y }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/konto/tokens');
 		await checkA11y(page);

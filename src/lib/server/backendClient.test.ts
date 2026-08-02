@@ -2,23 +2,22 @@ import { describe, expect, it } from 'vitest';
 import { authContext, backendClient } from './backend';
 
 /**
- * Die Header, die an das Backend gehen.
+ * The headers that go to the backend.
  *
- * `backendClient()` baut sie von Grund auf neu, statt sie aus dem eingehenden Request zu
- * kopieren. Das ist die Zusicherung, an der die ganze Auth-Trennung hängt: würde ein
- * `Authorization`-Header des Browsers durchgereicht, käme ein Personal Access Token an einer
- * Türe an, für die es nicht gedacht ist — und zwar mit der Identität, die der Proxy gerade
- * gesetzt hat.
+ * `backendClient()` builds them from scratch rather than copying them from the incoming
+ * request. That is the assurance the whole auth separation hangs on: were an `Authorization`
+ * header from the browser forwarded, a Personal Access Token would arrive at a door it is not
+ * meant for — carrying the identity the proxy has just set.
  *
- * Geprüft wird hier die Konstruktion, nicht der Transport; dass der Request die Header auch
- * wirklich trägt, prüft tests/identity.spec.ts im echten Browser.
+ * What is checked here is the construction, not the transport; that the request really carries
+ * the headers is checked by tests/identity.spec.ts in a real browser.
  */
 describe('backendClient', () => {
 	function headersOf(client: ReturnType<typeof backendClient>): Record<string, string> {
 		return { ...((client.requestConfig.headers as Record<string, string>) ?? {}) };
 	}
 
-	it('schickt die Identität des laufenden Requests mit', async () => {
+	it('sends the identity of the running request', async () => {
 		await authContext.run(
 			{ remoteUser: 'prof.eins@example.org', remoteDisplayname: 'Prof. Eins' },
 			() => {
@@ -30,19 +29,19 @@ describe('backendClient', () => {
 		);
 	});
 
-	it('schickt ohne Identität gar keine Auth-Header', () => {
-		// Nicht etwa einen leeren X-Remote-User: ein Header mit leerem Wert ist für das
-		// Backend etwas anderes als ein fehlender, und „anonym" muss eindeutig anonym sein.
+	it('sends no auth headers at all without an identity', () => {
+		// Not an empty X-Remote-User: for the backend a header with an empty value is something
+		// other than a missing one, and "anonymous" has to be unambiguously anonymous.
 		const headers = headersOf(backendClient());
 
 		expect(headers['X-Remote-User']).toBeUndefined();
 		expect(headers['X-Remote-Displayname']).toBeUndefined();
 	});
 
-	it('trägt niemals einen Authorization-Header', async () => {
-		// Es gibt keinen Parameter, über den ein Aufrufer einen mitgeben könnte — genau das
-		// ist Absicht. Dieser Test schlägt fehl, sobald jemand einen einbaut, und das ist die
-		// Stelle, an der jemand die Absicht nachlesen soll, bevor er sie überschreibt.
+	it('never carries an Authorization header', async () => {
+		// There is no parameter through which a caller could pass one — that is precisely the
+		// intent. This test fails as soon as somebody adds one, and it is the place to read the
+		// intent before overriding it.
 		await authContext.run({ remoteUser: 'prof.zwei@example.org' }, () => {
 			const headers = headersOf(backendClient());
 
@@ -51,11 +50,10 @@ describe('backendClient', () => {
 		});
 	});
 
-	it('hält zwei Identitäten auseinander', () => {
-		// Explizit übergebener Kontext statt AsyncLocalStorage: derselbe Prozess, zwei
-		// Clients, keine geteilte Kopfzeilen-Instanz. Ein zwischen Aufrufen wiederverwendetes
-		// Header-Objekt würde hier auffallen — und in der Produktion wäre es die vertauschte
-		// Identität unter Last.
+	it('keeps two identities apart', () => {
+		// Context passed explicitly rather than via AsyncLocalStorage: the same process, two
+		// clients, no shared header instance. A header object reused between calls would show up
+		// here — and in production it would be a swapped identity under load.
 		const eins = headersOf(backendClient({ remoteUser: 'prof.eins@example.org' }));
 		const zwei = headersOf(backendClient({ remoteUser: 'prof.zwei@example.org' }));
 

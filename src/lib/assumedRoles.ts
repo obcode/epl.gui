@@ -1,45 +1,44 @@
 /**
- * Die Rollenverengung — „einmal anschauen, was eine Dozentin sieht".
+ * Role narrowing — "let me see what a lecturer sees".
  *
- * Der gewählte Satz steht in einem Cookie und wird von `hooks.server.ts` als
- * `X-Tallox-Assume-Roles` ans Backend weitergereicht. Dass das gefahrlos geht, ist keine
- * Eigenschaft dieser Datei, sondern von `policy.Narrow` dort: die Auswahl wird mit den
- * tatsächlich gehaltenen Rollen geschnitten, und ein Schnitt kann nichts hinzufügen. Ein
- * handgeschriebener Cookie nimmt seinem Absender also Rechte weg und sonst nichts.
+ * The chosen set lives in a cookie and is relayed to the backend by `hooks.server.ts` as
+ * `X-Tallox-Assume-Roles`. That this is safe is not a property of this file but of
+ * `policy.Narrow` over there: the selection is intersected with the roles actually held, and an
+ * intersection cannot add anything. A hand-written cookie therefore takes privileges away from
+ * its author and does nothing else.
  *
- * Frei von Svelte und Browser-APIs, damit die Logik in vitest prüfbar ist — wie themes.ts.
+ * Free of Svelte and browser APIs so the logic is checkable in vitest — like themes.ts.
  */
 
-/** Eigener Präfix, wie beim Theme: ein generischer Name kollidiert auf derselben Domain. */
+/** Its own prefix, as with the theme: a generic name collides on the same domain. */
 export const ASSUME_COOKIE = 'tallox_assume';
 
 /**
- * Eine Sitzung, keine Vorliebe.
+ * A session, not a preference.
  *
- * Acht Stunden, nicht ein Jahr: eine Verengung ist etwas, das man für einen Moment einschaltet
- * und dann vergisst. Sie soll spätestens am nächsten Morgen von selbst weg sein, damit
- * niemand nach zwei Wochen meldet, dass die Verwaltung verschwunden ist.
+ * Eight hours rather than a year: narrowing is something you switch on for a moment and then
+ * forget. It should be gone by itself the next morning at the latest, so that nobody reports
+ * two weeks later that the administration has disappeared.
  */
 export const ASSUME_COOKIE_MAX_AGE = 60 * 60 * 8;
 
 /**
- * Der Wert für „gar keine Rolle".
+ * The value for "no role at all".
  *
- * Ein leerer Cookie-Wert ist nicht zuverlässig von einem fehlenden zu unterscheiden, und die
- * beiden bedeuten Verschiedenes: fehlend heißt „beurteile mich normal", leer heißt „beurteile
- * mich wie jemanden ohne jede Rolle". Letzteres ist eine echte Ansicht — es ist das, was eine
- * Kollegin an dem Tag sieht, an dem ihre Person angelegt wurde und ihr noch niemand etwas
- * gegeben hat.
+ * An empty cookie value cannot reliably be told from a missing one, and the two mean different
+ * things: missing is "judge me normally", empty is "judge me as somebody with no role
+ * whatsoever". The latter is a real view — it is what a colleague sees on the day her person
+ * row was created and nobody has given her anything yet.
  */
 export const ASSUME_NONE = 'NONE';
 
 /**
- * Liest den Cookie-Wert.
+ * Reads the cookie value.
  *
- * `undefined` heißt „nicht verengt". Ein leeres Array heißt „auf nichts verengt". Alles, was
- * nicht wie eine Rollenliste aussieht, wird verworfen und ist damit ebenfalls „nicht verengt"
- * — die fehlerfreundliche Richtung, weil ein kaputter Cookie sonst jemanden aussperren würde,
- * ohne dass er wüsste warum.
+ * `undefined` means "not narrowed". An empty array means "narrowed to nothing". Anything that
+ * does not look like a role list is discarded and therefore also "not narrowed" — the
+ * forgiving direction, because a broken cookie would otherwise lock somebody out without their
+ * knowing why.
  */
 export function parseAssumedRoles(cookie: string | undefined): string[] | undefined {
 	if (cookie === undefined) return undefined;
@@ -56,16 +55,16 @@ export function parseAssumedRoles(cookie: string | undefined): string[] | undefi
 	return roles.length > 0 ? roles : undefined;
 }
 
-/** Baut den Cookie-Wert aus einer Auswahl. */
+/** Builds the cookie value from a selection. */
 export function serializeAssumedRoles(roles: readonly string[]): string {
 	return roles.length === 0 ? ASSUME_NONE : [...roles].join(',');
 }
 
 /**
- * Der Header-Wert für das Backend, oder `undefined`, wenn nicht verengt wird.
+ * The header value for the backend, or `undefined` when nothing is being narrowed.
  *
- * Der leere String ist ein gültiger Wert und bedeutet etwas anderes als „kein Header" — siehe
- * ASSUME_NONE und `narrowIfRequested` im Backend.
+ * The empty string is a valid value and means something different from "no header" — see
+ * ASSUME_NONE and `narrowIfRequested` in the backend.
  */
 export function assumeHeaderValue(roles: string[] | undefined): string | undefined {
 	if (roles === undefined) return undefined;

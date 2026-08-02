@@ -2,26 +2,24 @@ import { buildSchema, GraphQLEnumType, GraphQLObjectType, GraphQLScalarType } fr
 import type { GraphQLNamedType } from 'graphql';
 
 /**
- * Die API-Referenz aus dem Schema, nicht aus einem Text.
+ * The API reference built from the schema rather than from prose.
  *
- * Eine von Hand gepflegte Feldliste ist ab dem Tag falsch, an dem sie geschrieben wird — und
- * niemand merkt es, weil eine Dokumentation nicht rot wird. `schema.graphql` ist die
- * eingecheckte Kopie des Backend-Schemas (`pnpm run update-schema`), also genau das, was
- * `pnpm codegen` auch benutzt: die Referenz kann gar nicht von den typisierten Dokumenten
- * abweichen.
+ * A hand-maintained field list is wrong from the day it is written — and nobody notices,
+ * because documentation does not go red. `schema.graphql` is the committed copy of the backend
+ * schema (`pnpm run update-schema`), exactly what `pnpm codegen` reads too: the reference
+ * cannot diverge from the typed documents.
  *
- * **Was die Referenz nicht zeigen kann:** wo eine Direktive angewandt wurde. Die
- * GraphQL-Introspection liefert die *Definition* einer Direktive, aber nicht ihre
- * Verwendungsstellen — `schema.graphql` entsteht aus Introspection und weiß es damit selbst
- * nicht. Das betrifft beide Direktiven des Backends, und beide behelfen sich mit Prosa, denn
- * Beschreibungen kommen hier mit:
+ * **What the reference cannot show:** where a directive was applied. GraphQL introspection
+ * reports the *definition* of a directive but never its usages — `schema.graphql` comes out of
+ * introspection and therefore does not know either. That affects both of the backend's
+ * directives, and both work around it with prose, because descriptions do travel:
  *
- * - `@interactiveOnly` steht in der Beschreibung des jeweiligen Feldes.
- * - `@scope` steht umgekehrt bei der Fläche: jeder `ScopeArea`-Wert zählt seine Felder auf.
- *   Im Backend hält `TestScopeAreasListTheirFields` diese Listen aktuell.
+ * - `@interactiveOnly` is spelled out in the description of each affected field.
+ * - `@scope` does it from the other end, at the area: every `ScopeArea` value lists its
+ *   fields. In the backend `TestScopeAreasListTheirFields` keeps those lists current.
  *
- * Die Konsole auf der Doku-Seite ist die zweite Antwort: wer es genau wissen will, fragt das
- * Feld mit einem Token ab und sieht `null` bzw. `INSUFFICIENT_SCOPE`.
+ * The console on the documentation page is the second answer: anybody who wants to be sure
+ * queries the field with a token and sees `null` or `INSUFFICIENT_SCOPE`.
  */
 
 export type FieldArg = {
@@ -43,24 +41,24 @@ export type SchemaType = {
 	name: string;
 	kind: 'object' | 'enum' | 'scalar';
 	description: string | null;
-	/** Nur bei Objekttypen. */
+	/** Object types only. */
 	fields: SchemaField[];
-	/** Nur bei Enums. */
+	/** Enums only. */
 	values: { name: string; description: string | null }[];
 };
 
 export type SchemaDoc = {
-	/** Query, Mutation und Subscription — in dieser Reihenfolge, soweit vorhanden. */
+	/** Query, Mutation and Subscription — in that order, as far as they exist. */
 	roots: SchemaType[];
-	/** Alles Übrige, alphabetisch. */
+	/** Everything else, alphabetically. */
 	types: SchemaType[];
 };
 
 /**
- * Baut die Referenz aus einem SDL-Text.
+ * Builds the reference from an SDL text.
  *
- * Nimmt den Text als Parameter statt ihn selbst zu lesen: so ist die Funktion ohne
- * Dateisystem prüfbar, und die Seite entscheidet, woher das Schema kommt.
+ * Takes the text as a parameter instead of reading it itself: that way the function is
+ * checkable without a filesystem, and the page decides where the schema comes from.
  */
 export function buildSchemaDoc(sdl: string): SchemaDoc {
 	const schema = buildSchema(sdl);
@@ -75,7 +73,7 @@ export function buildSchemaDoc(sdl: string): SchemaDoc {
 	const types: SchemaType[] = [];
 
 	for (const type of Object.values(schema.getTypeMap())) {
-		// Introspection-Typen (`__Schema`, `__Type`, …) sind Werkzeug, nicht Anwendung.
+		// Introspection types (`__Schema`, `__Type`, …) are tooling, not application.
 		if (type.name.startsWith('__')) continue;
 
 		const described = describe(type);
@@ -127,8 +125,8 @@ function describe(type: GraphQLNamedType): SchemaType | null {
 	}
 
 	if (type instanceof GraphQLScalarType) {
-		// Die eingebauten Skalare erklären sich selbst und stünden nur im Weg. Eigene — Time,
-		// später vielleicht mehr — tragen eine Beschreibung, die jemand geschrieben hat.
+		// The built-in scalars explain themselves and would only be in the way. Custom ones —
+		// Time, and perhaps more later — carry a description somebody wrote.
 		const builtin = ['String', 'Int', 'Float', 'Boolean', 'ID'];
 		if (builtin.includes(type.name)) return null;
 
@@ -145,28 +143,28 @@ function describe(type: GraphQLNamedType): SchemaType | null {
 }
 
 /**
- * Ein Absatz einer Beschreibung, so wie er angezeigt wird.
+ * One paragraph of a description, in the shape it is displayed.
  *
- * `code` behält seine Zeilenumbrüche, `text` wird neu umbrochen.
+ * `code` keeps its line breaks, `text` is rewrapped.
  */
 export type DescriptionBlock = { kind: 'text' | 'code'; text: string };
 
 /**
- * Bricht eine Beschreibung neu um.
+ * Rewraps a description.
  *
- * Die Beschreibungen im Schema sind Quelltext: sie sind auf knapp 100 Zeichen hart
- * umbrochen, weil sie in einer `.graphqls`-Datei gelesen werden. Introspection reicht diese
- * Zeilenumbrüche wörtlich weiter — sie stecken also in `schema.graphql` und damit hier. Auf
- * einer Seite ergibt das Zeilen, die mitten im Satz enden, und zwar an einer Stelle, die mit
- * der Breite des Browsers nichts zu tun hat.
+ * The descriptions in the schema are source code: they are hard-wrapped at just under 100
+ * characters because they are read in a `.graphqls` file. Introspection passes those line
+ * breaks through verbatim — so they sit in `schema.graphql` and therefore here. On a page that
+ * produces lines ending mid-sentence, at a position that has nothing to do with the width of
+ * the browser.
  *
- * Einfach alle Umbrüche zu entfernen wäre falsch: die Leerzeile zwischen zwei Absätzen ist
- * eine Aussage, und ohne sie wird aus einer strukturierten Erklärung eine Textwand. Also:
- * Absätze bleiben, die harten Umbrüche innerhalb eines Absatzes verschwinden.
+ * Simply removing every break would be wrong: the blank line between two paragraphs is a
+ * statement, and without it a structured explanation becomes a wall of text. So: paragraphs
+ * stay, the hard breaks inside a paragraph go.
  *
- * Eingerückte Absätze bleiben, wie sie sind. Im heutigen Schema gibt es keine — aber ein
- * Beispielaufruf oder eine kleine Tabelle in einer Beschreibung ist absehbar, und die durch
- * einen Reflow zu schicken macht sie unlesbar.
+ * Indented paragraphs are left as they are. Today's schema has none — but an example call or a
+ * small table inside a description is foreseeable, and putting those through a reflow makes
+ * them unreadable.
  */
 export function describeBlocks(description: string | null | undefined): DescriptionBlock[] {
 	if (!description) return [];
@@ -188,30 +186,29 @@ export function describeBlocks(description: string | null | undefined): Descript
 }
 
 /**
- * Ein Stück Fließtext, entweder normal oder als Code ausgezeichnet.
+ * A piece of running text, either plain or marked up as code.
  */
 export type InlineSegment = { code: boolean; text: string };
 
 /**
- * Zerlegt einen Absatz an den Backticks.
+ * Splits a paragraph at the backticks.
  *
- * GraphQL-Beschreibungen sind laut Spezifikation Markdown, und im Schema wird das auch
- * benutzt: `null`, `@interactiveOnly`, `/api/graphql`. Wörtlich angezeigt stehen die
- * Backticks als Zeichen auf der Seite und sehen aus wie ein Formatierungsfehler — was sie
- * genau genommen auch sind.
+ * GraphQL descriptions are Markdown by specification, and the schema uses that: `null`,
+ * `@interactiveOnly`, `/api/graphql`. Displayed verbatim the backticks appear as characters on
+ * the page and look like a formatting error — which, strictly speaking, is what they are.
  *
- * Zerlegt in Segmente statt HTML zu erzeugen: die Beschreibungen kommen aus einem anderen
- * Repository, und ein `{@html}` mit fremdem Text wäre eine Einladung, die man nicht
- * ausspricht. So bleibt jedes Segment ein Textknoten, den Svelte escaped.
+ * Split into segments rather than turned into HTML: the descriptions come from another
+ * repository, and an `{@html}` carrying foreign text is an invitation one does not extend. This
+ * way every segment stays a text node that Svelte escapes.
  *
- * Mehr Markdown als das absichtlich nicht. Fett und Kursiv kommen in diesen Beschreibungen
- * kaum vor, und eine halbe Markdown-Implementierung von Hand ist der Anfang einer ganzen.
+ * Deliberately no more Markdown than that. Bold and italic barely occur in these descriptions,
+ * and half a hand-written Markdown implementation is the beginning of a whole one.
  */
 export function inlineSegments(text: string): InlineSegment[] {
 	const segments: InlineSegment[] = [];
 
-	// Ungerade Anzahl Backticks: dann ist der letzte keiner, der etwas öffnet. split() liefert
-	// die Teile abwechselnd, also fällt das von selbst richtig heraus.
+	// An odd number of backticks means the last one does not open anything. split() returns the
+	// parts alternately, so that falls out correctly by itself.
 	text.split('`').forEach((part, index) => {
 		if (part === '') return;
 		segments.push({ code: index % 2 === 1, text: part });
@@ -221,8 +218,8 @@ export function inlineSegments(text: string): InlineSegment[] {
 }
 
 /**
- * Ein Anker für die Sprungmarken. Nur Buchstaben und Ziffern, damit er in eine URL passt und
- * nicht mit einem CSS-Selektor kollidiert.
+ * An anchor for the jump links. Letters and digits only, so it fits into a URL and does not
+ * collide with a CSS selector.
  */
 export function anchorFor(typeName: string): string {
 	return `typ-${typeName.replace(/[^A-Za-z0-9]/g, '')}`;

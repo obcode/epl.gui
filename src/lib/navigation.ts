@@ -3,31 +3,31 @@ import type { Role } from '$lib/gql/__generated__/graphql';
 import { hasAnyRole } from '$lib/roles';
 
 /**
- * Die Bereiche der Anwendung, in der Reihenfolge des Planungsprozesses.
+ * The areas of the application, in the order of the planning process.
  *
- * Bereiche ohne `href` sind noch nicht gebaut. Sie stehen trotzdem hier und werden gedämpft
- * und ohne Link dargestellt — das ist eine bewusste Entscheidung gegen zwei Alternativen:
- * eine Navigation mit einem einzigen Eintrag zeigt die Struktur des Prozesses nicht, und
- * Platzhalterseiten, die nur „kommt noch" sagen, sind Klickwege ins Leere. So ist auf einen
- * Blick sichtbar, worauf das Werkzeug hinausläuft, ohne etwas vorzutäuschen.
+ * Areas without an `href` are not built yet. They are listed anyway, damped and without a
+ * link — a deliberate decision against two alternatives: a navigation with a single entry does
+ * not show the structure of the process, and placeholder pages that only say "coming soon" are
+ * click paths into nothing. This way what the tool is heading towards is visible at a glance,
+ * without pretending anything is there.
  *
- * Wenn ein Bereich entsteht: Route anlegen, hier `href` ergänzen — mehr nicht.
+ * When an area comes into being: add the route, add the `href` here — nothing else.
  */
 export type NavItem = {
 	emoji: string;
 	label: string;
 	href?: RouteId;
-	/** Kurze Erläuterung, erscheint als title. */
+	/** A short explanation, rendered as the title attribute. */
 	hint: string;
 	/**
-	 * Wer den Eintrag sieht. Fehlt das Feld, sehen ihn alle.
+	 * Who sees the entry. When the field is absent, everybody does.
 	 *
-	 * **Kosmetik, kein Riegel.** Dieselbe API ist mit einem Personal Access Token direkt
-	 * erreichbar, unter Umgehung dieser Anwendung — was hier versteckt wird, ist damit nicht
-	 * geschützt, sondern nur nicht im Weg. Der Riegel steht in `internal/policy`.
+	 * **Cosmetic, not a lock.** The same API is reachable directly with a Personal Access
+	 * Token, bypassing this application — so what is hidden here is not protected, merely out
+	 * of the way. The lock is in `internal/policy`.
 	 *
-	 * Was es trotzdem wert ist: eine Dozentin, die „Statistik" und „Bedarf" im Menü sieht und
-	 * bei jedem Klick eine Ablehnung bekommt, lernt, Ablehnungen zu ignorieren.
+	 * What it is worth anyway: a lecturer who sees "Statistik" and "Bedarf" in the menu and
+	 * gets a refusal on every click learns to ignore refusals.
 	 */
 	roles?: readonly Role[];
 };
@@ -57,7 +57,7 @@ export const NAV_ITEMS: readonly NavItem[] = [
 	}
 ];
 
-/** Nur exakte Treffer: sonst wäre bei `/` jeder Eintrag aktiv. */
+/** Exact matches only: otherwise every entry would be active on `/`. */
 export function isActive(item: NavItem, pathname: string): boolean {
 	if (!item.href) return false;
 	if (item.href === '/') return pathname === '/';
@@ -65,12 +65,12 @@ export function isActive(item: NavItem, pathname: string): boolean {
 }
 
 /**
- * Was nicht zum Planungsprozess gehört, aber trotzdem erreichbar sein muss.
+ * What does not belong to the planning process but still has to be reachable.
  *
- * Getrennt von NAV_ITEMS, weil die Bereichsleiste die *Schritte des Prozesses* zeigt —
- * Konto und API sind keine Schritte, sondern Werkzeuge. In die Leiste einsortiert würden sie
- * die Reihenfolge unlesbar machen, die dort der ganze Punkt ist; sie stehen deshalb im Menü
- * bei der Identität.
+ * Separate from NAV_ITEMS because the area bar shows the *steps of the process* — the account
+ * and the API are not steps but tools. Sorted into the bar they would make the order
+ * unreadable, and that order is the whole point of it; so they live in the menu next to the
+ * identity.
  */
 export const ACCOUNT_ITEMS: readonly NavItem[] = [
 	{
@@ -102,12 +102,12 @@ export const ACCOUNT_ITEMS: readonly NavItem[] = [
 ];
 
 /**
- * Filtert Einträge auf die, die diese Rollen sehen sollen.
+ * Filters entries down to the ones these roles should see.
  *
- * Bekommt die **effektiven** Rollen aus `session.effectiveRoles`, nicht die gehaltenen: wer
- * sich gerade verengt hat, soll auch das Menü der verengten Rolle sehen — sonst zeigt die
- * Vorschau etwas anderes als das, wonach der Server den Request beurteilt, und beantwortet
- * damit genau die Frage nicht, für die es sie gibt.
+ * Takes the **effective** roles from `session.effectiveRoles`, not the held ones: somebody who
+ * has narrowed themselves should see the narrowed role's menu too — otherwise the preview
+ * shows something other than what the server judges the request by, and thereby fails to
+ * answer the very question it exists for.
  */
 export function visibleNavItems(
 	items: readonly NavItem[],

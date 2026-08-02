@@ -1,26 +1,26 @@
 import { test, expect, PERSONAS, gotoRendered } from './fixtures';
 
 /**
- * Die Identitätsweitergabe — der eine Mechanismus, den nur ein E2E-Test prüfen kann.
+ * The identity relay — the one mechanism only an end-to-end test can check.
  *
- * Der SSR-Prozess spricht containerintern mit dem Backend und umgeht dabei den Auth-Proxy.
- * Das Backend sieht also kein `X-Remote-User`, wenn die GUI es nicht selbst mitschickt. Das
- * passiert in `src/lib/server/backend.ts` über AsyncLocalStorage, gesetzt einmal in
- * `hooks.server.ts` — bewusst nicht durch jede `load()`-Signatur gefädelt, weil eine
- * vergessene Stelle ein stiller Autorisierungsfehler wäre.
+ * The SSR process talks to the backend container-internally and thereby bypasses the auth
+ * proxy. So the backend sees no `X-Remote-User` unless the GUI sends it itself. That happens in
+ * `src/lib/server/backend.ts` via AsyncLocalStorage, set once in `hooks.server.ts` —
+ * deliberately not threaded through every `load()` signature, because one forgotten place would
+ * be a silent authorization failure.
  *
- * "Still" ist hier das Problem: fällt die Weitergabe aus, wird jede Seite als anonym gerendert
- * und sieht dabei völlig normal aus. Ein Unit-Test auf `backendClient()` beweist nur, dass die
- * Funktion Header baut — nicht, dass der Request sie auch trägt.
+ * "Silent" is the problem here: if the relay fails, every page renders as anonymous and looks
+ * completely normal doing it. A unit test on `backendClient()` only proves the function builds
+ * headers — not that the request carries them.
  */
-test.describe('Identität', () => {
-	test('ohne Proxy-Header ist der Zugriff anonym', async ({ page }) => {
+test.describe('identity', () => {
+	test('access is anonymous without the proxy header', async ({ page }) => {
 		await gotoRendered(page, '/');
 
 		await expect(page.getByText(/Kein\s+X-Remote-User\s+gesetzt/)).toBeVisible();
 	});
 
-	test('der vom Proxy gesetzte Nutzer erscheint auf der Seite', async ({ asPersona }) => {
+	test('the user set by the proxy appears on the page', async ({ asPersona }) => {
 		const page = await asPersona(PERSONAS.eins);
 		await gotoRendered(page, '/');
 
@@ -28,13 +28,11 @@ test.describe('Identität', () => {
 		await expect(page.getByText(/Kein\s+X-Remote-User/)).toHaveCount(0);
 	});
 
-	test('zwei Personen sehen ihre eigene Identität, nicht die der anderen', async ({
-		asPersona
-	}) => {
-		// Zwei Kontexte parallel. Der Fehler, den das fängt, ist ein pro Prozess statt pro
-		// Request gehaltener Zustand — der AsyncLocalStorage ist genau die Konstruktion, bei
-		// der das schiefgehen kann, und unter Last würde es sich als vertauschte Identität
-		// zeigen. In diesem Projekt heißt das: jemand sieht die Wünsche einer anderen Person.
+	test("two people see their own identity, not each other's", async ({ asPersona }) => {
+		// Two contexts in parallel. The defect this catches is state held per process instead of
+		// per request — AsyncLocalStorage is exactly the construction where that can go wrong,
+		// and under load it would show up as a swapped identity. In this project that means:
+		// somebody sees another person's wishes.
 		const [eins, zwei] = await Promise.all([asPersona(PERSONAS.eins), asPersona(PERSONAS.zwei)]);
 
 		await Promise.all([gotoRendered(eins, '/'), gotoRendered(zwei, '/')]);
@@ -46,13 +44,11 @@ test.describe('Identität', () => {
 		await expect(zwei.getByText(PERSONAS.eins.mail)).toHaveCount(0);
 	});
 
-	test('ein vom Client mitgeschickter Authorization-Header wird nicht weitergereicht', async ({
-		browser
-	}) => {
-		// `backendClient()` baut seine Header von Grund auf neu. Würde es stattdessen die des
-		// eingehenden Requests kopieren, könnte ein Browser sein eigenes Bearer-Token an das
-		// Backend durchreichen — und damit an der Türe vorbei, für die es gar nicht gedacht
-		// ist. Hier zählt nur, dass die Seite normal rendert und der Header nichts bewirkt.
+	test('an Authorization header sent by the client is not forwarded', async ({ browser }) => {
+		// `backendClient()` builds its headers from scratch. Were it to copy those of the
+		// incoming request instead, a browser could pass its own bearer token to the backend —
+		// past the door it is not meant for. All that counts here is that the page renders
+		// normally and the header has no effect.
 		const context = await browser.newContext({
 			extraHTTPHeaders: { Authorization: 'Bearer tallox_AAAAAAAAAAAAAAAA_nonsense' }
 		});

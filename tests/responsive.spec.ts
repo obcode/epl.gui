@@ -1,37 +1,39 @@
 import { test, expect, gotoRendered, openDropdown } from './fixtures';
 
 /**
- * Tablet-first, wie in CLAUDE.md festgelegt: ab 768px voll benutzbar, bei 375px sauber.
+ * Tablet-first, as laid down in CLAUDE.md: fully usable from 768px, clean at 375px.
  *
- * Der Fehler, den das fängt, ist immer derselbe und immer unsichtbar auf dem Rechner, auf dem
- * er entsteht: eine breite Tabelle oder eine lange Zeile schiebt den Body über den Viewport
- * hinaus. Auf einem Desktop-Monitor merkt das niemand; auf dem Tablet in der Sitzung, in der
- * die Zuteilung besprochen wird, wackelt die ganze Seite horizontal.
+ * The defect this catches is always the same and always invisible on the machine it arises on:
+ * a wide table or a long line pushes the body past the viewport. Nobody notices on a desktop
+ * monitor; on the tablet in the meeting where the assignment is discussed, the whole page wobbles
+ * horizontally.
  */
 /**
- * Die Breiten, an denen gemessen wird. Keine Ausnahmen mehr: der Überlauf, den dieser Test
- * bei seinem ersten Lauf gefunden hat, ist behoben.
+ * The widths that are measured. No exceptions any more: the overflow this test found on its
+ * first run is fixed.
  *
- * Der Befund war echt — 883px bei 768px Viewport, 1117px bei 1024px. Die Bereichsleiste
- * schaltete auf `md:` (768px) auf sieben nebeneinanderstehende Einträge um und passte dort
- * nicht, ausgerechnet ab der Breite, an der CLAUDE.md volle Benutzbarkeit zusagt. Bei 375px
- * trug der Hamburger, bei 1440px war Platz genug; deshalb fiel es genau dazwischen auf.
+ * The finding was real — 883px at a 768px viewport, 1117px at 1024px. The area bar switched to
+ * seven side-by-side entries at `md:` (768px) and did not fit there, at exactly the width
+ * CLAUDE.md promises full usability from. At 375px the hamburger carried it, at 1440px there was
+ * room enough; which is why it showed up precisely in between.
  *
- * Behoben durch zwei Änderungen in NavBar.svelte, die zusammengehören: die Leiste schaltet
- * erst ab `lg` (1024px) um, und der Marken-Untertitel erst ab `xl`. Die erste allein genügt
- * nicht — `lg` bedeutet *ab* 1024px, also zeigt sich die Leiste bei genau 1024 und braucht
- * dort weiterhin 1117px. Erst der Platz aus dem zweiten Schritt bringt sie unter.
+ * Fixed by two changes in NavBar.svelte that belong together: the bar only switches from `lg`
+ * (1024px), and the brand subtitle only from `xl`. The first alone is not enough — `lg` means
+ * *from* 1024px, so the bar appears at exactly 1024 and still needs 1117px there. Only the room
+ * from the second step brings it under.
  */
 const VIEWPORTS = [
-	{ name: 'Handy', width: 375, height: 812 },
-	{ name: 'Tablet hochkant', width: 768, height: 1024 },
-	{ name: 'Tablet quer', width: 1024, height: 768 },
-	{ name: 'Desktop', width: 1440, height: 900 }
+	{ name: 'phone', width: 375, height: 812 },
+	{ name: 'tablet portrait', width: 768, height: 1024 },
+	{ name: 'tablet landscape', width: 1024, height: 768 },
+	{ name: 'desktop', width: 1440, height: 900 }
 ] as const;
 
-test.describe('Darstellung über Breiten', () => {
+test.describe('rendering across widths', () => {
 	for (const viewport of VIEWPORTS) {
-		test(`${viewport.name} (${viewport.width}px) scrollt nicht horizontal`, async ({ page }) => {
+		test(`${viewport.name} (${viewport.width}px) does not scroll horizontally`, async ({
+			page
+		}) => {
 			await page.setViewportSize({ width: viewport.width, height: viewport.height });
 			await gotoRendered(page, '/');
 
@@ -40,17 +42,17 @@ test.describe('Darstellung über Breiten', () => {
 				return { scroll: el.scrollWidth, client: el.clientWidth };
 			});
 
-			// Ein Pixel Toleranz für Subpixel-Rundung bei fraktionalen Layoutbreiten.
+			// One pixel of tolerance for subpixel rounding at fractional layout widths.
 			expect(
 				overflow.scroll,
-				`Die Seite ist ${overflow.scroll}px breit bei ${overflow.client}px Viewport — ` +
-					`etwas darin hat keine Breitenbegrenzung. Breite Inhalte gehören in einen ` +
-					`eigenen overflow-x-auto-Container, nicht in den Body.`
+				`The page is ${overflow.scroll}px wide at a ${overflow.client}px viewport — ` +
+					`something in it has no width limit. Wide content belongs in an ` +
+					`overflow-x-auto container of its own, not in the body.`
 			).toBeLessThanOrEqual(overflow.client + 1);
 		});
 	}
 
-	test('unter 1024px trägt der Hamburger die Navigation', async ({ page }) => {
+	test('below 1024px the hamburger carries the navigation', async ({ page }) => {
 		await page.setViewportSize({ width: 768, height: 1024 });
 		await gotoRendered(page, '/');
 
@@ -60,12 +62,12 @@ test.describe('Darstellung über Breiten', () => {
 		await expect(page.getByRole('banner').getByRole('list').last()).toBeVisible();
 	});
 
-	test('ab 1024px steht die Bereichsleiste nebeneinander', async ({ page }) => {
+	test('from 1024px the area bar stands side by side', async ({ page }) => {
 		await page.setViewportSize({ width: 1024, height: 768 });
 		await gotoRendered(page, '/');
 
-		// Umgekehrte Richtung: der Hamburger verschwindet. Ohne diese Hälfte wäre ein Layout,
-		// das beide Varianten gleichzeitig zeigt, für den Test in Ordnung.
+		// The other direction: the hamburger disappears. Without this half, a layout showing both
+		// variants at once would be fine as far as the test is concerned.
 		await expect(page.getByRole('button', { name: 'Bereiche' })).toBeHidden();
 	});
 });
